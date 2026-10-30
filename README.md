@@ -221,3 +221,4 @@ All responses return standard JSON format:
 - **Android Emulator**: Base URL is `http://10.0.2.2/momora-AI/`
 - **Physical Phone (LAN/Wi-Fi)**: Set Base URL to `http://<YOUR_COMPUTER_IP>/momora-AI/` (e.g. `http://192.168.1.15/momora-AI/`)
 - **Cleartext Traffic**: Ensure `android:usesCleartextTraffic="true"` is enabled in `app/src/main/AndroidManifest.xml` for local HTTP development.
+
