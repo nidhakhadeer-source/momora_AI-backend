@@ -1,0 +1,994 @@
+{
+  "info": {
+    "_postman_id": "a918237b-9182-4ef1-8cb2-8172938b8123",
+    "name": "Momora AI REST API",
+    "description": "Complete Postman collection for Momora AI: Personalized AI-Powered Pregnancy Monitoring & Guidance Application.\nIncludes all endpoints for Patients, Doctors, and Administrators.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://rental-starry-charm.ngrok-free.dev/momora-AI",
+      "type": "string"
+    },
+    {
+      "key": "patient_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "doctor_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login - Patient (Maya Patel)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('patient_token', jsonData.token);",
+                  "    console.log('Saved patient_token: ' + jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "maya.patel@example.com", "type": "text" },
+                { "key": "password", "value": "Password123!", "type": "text" },
+                { "key": "role", "value": "patient", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login.php",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login.php"]
+            }
+          }
+        },
+        {
+          "name": "Login - Doctor (Dr Amelia Chen)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('doctor_token', jsonData.token);",
+                  "    console.log('Saved doctor_token: ' + jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "amelia.chen@willow.example", "type": "text" },
+                { "key": "password", "value": "Password123!", "type": "text" },
+                { "key": "role", "value": "doctor", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login.php",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login.php"]
+            }
+          }
+        },
+        {
+          "name": "Login - Admin (Alex Morgan)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('admin_token', jsonData.token);",
+                  "    console.log('Saved admin_token: ' + jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "admin@willow.example", "type": "text" },
+                { "key": "password", "value": "Password123!", "type": "text" },
+                { "key": "role", "value": "admin", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login.php",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login.php"]
+            }
+          }
+        },
+        {
+          "name": "Patient Registration (Sign Up)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "fullName", "value": "Priya Sharma", "type": "text" },
+                { "key": "email", "value": "priya.sharma@example.com", "type": "text" },
+                { "key": "password", "value": "Password123!", "type": "text" },
+                { "key": "dateOfBirth", "value": "1998-07-15", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup.php",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "signup.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Patient Dashboard & Profile",
+      "item": [
+        {
+          "name": "Get Patient Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/patient_dashboard.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "patient_dashboard.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Patient Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/profile/profile_fetch.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["profile", "profile_fetch.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Patient Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "fullName", "value": "Maya Patel", "type": "text" },
+                { "key": "email", "value": "maya.patel@example.com", "type": "text" },
+                { "key": "dateOfBirth", "value": "1997-05-14", "type": "text" },
+                { "key": "bloodGroup", "value": "O positive", "type": "text" },
+                { "key": "isCareTeamSharingOn", "value": "1", "type": "text" },
+                { "key": "phone", "value": "+1 (555) 234-5678", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/profile/profile_edit.php",
+              "host": ["{{base_url}}"],
+              "path": ["profile", "profile_edit.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Pregnancy Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pregnancy/pregnancy_details.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["pregnancy", "pregnancy_details.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Pregnancy Details",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "estimatedDueDate", "value": "2027-02-13", "type": "text" },
+                { "key": "lastMenstrualPeriod", "value": "2026-05-09", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/pregnancy/pregnancy_details.php",
+              "host": ["{{base_url}}"],
+              "path": ["pregnancy", "pregnancy_details.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Health & Vitals Tracking",
+      "item": [
+        {
+          "name": "Get Vitals Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health/vitals.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["health", "vitals.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Blood Pressure History & Chart",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health/blood_pressure.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["health", "blood_pressure.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Log Blood Pressure Reading",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "systolic", "value": "115", "type": "text" },
+                { "key": "diastolic", "value": "75", "type": "text" },
+                { "key": "pulse", "value": "76", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/health/blood_pressure.php",
+              "host": ["{{base_url}}"],
+              "path": ["health", "blood_pressure.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Weight History & Chart",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health/weight.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["health", "weight.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Log Maternal Weight",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "weight", "value": "64.5", "type": "text" },
+                { "key": "date", "value": "2026-10-30", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/health/weight.php",
+              "host": ["{{base_url}}"],
+              "path": ["health", "weight.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Logged Symptoms",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health/symptoms.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["health", "symptoms.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Log Symptom with AI Guidance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "symptomName", "value": "Heartburn after meals", "type": "text" },
+                { "key": "severity", "value": "MILD", "type": "text" },
+                { "key": "startedText", "value": "Today, 13:00", "type": "text" },
+                { "key": "durationText", "value": "About 25 min", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/health/symptoms.php",
+              "host": ["{{base_url}}"],
+              "path": ["health", "symptoms.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Baby Milestones & Daily Care",
+      "item": [
+        {
+          "name": "Get Baby Development Milestones",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/baby/development.php?week=24",
+              "host": ["{{base_url}}"],
+              "path": ["baby", "development.php"],
+              "query": [
+                { "key": "week", "value": "24" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Nutrition Plan",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/nutrition/plan.php?trimester=2",
+              "host": ["{{base_url}}"],
+              "path": ["nutrition", "plan.php"],
+              "query": [
+                { "key": "trimester", "value": "2" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Medication Reminders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medication/reminders.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["medication", "reminders.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Medication as Taken",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "medicationId", "value": "1", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/medication/reminders.php",
+              "host": ["{{base_url}}"],
+              "path": ["medication", "reminders.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Appointment Calendar",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/appointments.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "appointments.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Book Antenatal Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "doctorName", "value": "Dr Amelia Chen", "type": "text" },
+                { "key": "dateText", "value": "2026-11-05", "type": "text" },
+                { "key": "timeText", "value": "10:30", "type": "text" },
+                { "key": "isInPerson", "value": "1", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments/appointments.php",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "appointments.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Medical Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/reports.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "reports.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Medical Report Metadata",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "fileName", "value": "Ultrasound_24Weeks_Report.pdf", "type": "text" },
+                { "key": "category", "value": "ULTRASOUND", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/reports/reports.php",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "reports.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/notifications.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "notifications.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/notifications.php",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "notifications.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. AI Pregnancy Chat",
+      "item": [
+        {
+          "name": "Get Chat History",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/chat.php?user_id=5",
+              "host": ["{{base_url}}"],
+              "path": ["ai", "chat.php"],
+              "query": [
+                { "key": "user_id", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send Message to Momora AI",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "message", "value": "What exercises are safe during the second trimester?", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/ai/chat.php",
+              "host": ["{{base_url}}"],
+              "path": ["ai", "chat.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Doctor / Clinician Portal",
+      "item": [
+        {
+          "name": "Get Doctor Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctor/dashboard.php?user_id=3",
+              "host": ["{{base_url}}"],
+              "path": ["doctor", "dashboard.php"],
+              "query": [
+                { "key": "user_id", "value": "3" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Assigned Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctor/patients.php?user_id=3",
+              "host": ["{{base_url}}"],
+              "path": ["doctor", "patients.php"],
+              "query": [
+                { "key": "user_id", "value": "3" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Patient Medical History",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctor/patient_history.php?patientId=5",
+              "host": ["{{base_url}}"],
+              "path": ["doctor", "patient_history.php"],
+              "query": [
+                { "key": "patientId", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Patient Health Vitals Trends (7 Days)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctor/patient_monitoring.php?patientId=5",
+              "host": ["{{base_url}}"],
+              "path": ["doctor", "patient_monitoring.php"],
+              "query": [
+                { "key": "patientId", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Patient Advice Context",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctor/advice.php?patientId=5",
+              "host": ["{{base_url}}"],
+              "path": ["doctor", "advice.php"],
+              "query": [
+                { "key": "patientId", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send Secure Doctor Advice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "patientId", "value": "5", "type": "text" },
+                { "key": "subject", "value": "Heartburn care plan", "type": "text" },
+                { "key": "adviceText", "value": "Stay upright after eating and break meals into 5 smaller portions. We will check at your next clinic appointment.", "type": "text" },
+                { "key": "saveCopy", "value": "1", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/doctor/advice.php",
+              "host": ["{{base_url}}"],
+              "path": ["doctor", "advice.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Doctor Schedule",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctor/schedule.php?user_id=3",
+              "host": ["{{base_url}}"],
+              "path": ["doctor", "schedule.php"],
+              "query": [
+                { "key": "user_id", "value": "3" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Administrator Portal",
+      "item": [
+        {
+          "name": "Get Admin Dashboard & Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard.php?user_id=4",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "dashboard.php"],
+              "query": [
+                { "key": "user_id", "value": "4" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Add Doctor Form Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/doctors.php?action=form",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "doctors.php"],
+              "query": [
+                { "key": "action", "value": "form" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Doctor Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "action", "value": "create", "type": "text" },
+                { "key": "name", "value": "Dr Ethan Walker", "type": "text" },
+                { "key": "email", "value": "ethan.walker@willow.example", "type": "text" },
+                { "key": "specialty", "value": "Maternal-Fetal Medicine", "type": "text" },
+                { "key": "licenseId", "value": "OBS-55829", "type": "text" },
+                { "key": "clinic", "value": "Willow Maternity Clinic", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/doctors.php?action=create",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "doctors.php"],
+              "query": [
+                { "key": "action", "value": "create" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Manage Doctors List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/doctors.php",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "doctors.php"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Doctor Account Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "action", "value": "toggle", "type": "text" },
+                { "key": "doctorId", "value": "3", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/doctors.php?action=toggle",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "doctors.php"],
+              "query": [
+                { "key": "action", "value": "toggle" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Manage Patients List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/patients.php",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "patients.php"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Patient Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "patientId", "value": "5", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/patients.php",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "patients.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Admin Security Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/settings.php?user_id=4",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "settings.php"],
+              "query": [
+                { "key": "user_id", "value": "4" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "ngrok-skip-browser-warning", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/settings.php",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "settings.php"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
