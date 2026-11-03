@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS `profiles` (
     `gender` VARCHAR(30) DEFAULT 'Female',
     `blood_group` VARCHAR(15) DEFAULT 'O positive',
     `address` TEXT NULL,
+    `profile_photo` VARCHAR(255) NULL,
     `is_care_team_sharing_on` TINYINT(1) NOT NULL DEFAULT 1,
     `assigned_doctor_id` INT NULL,
     `reminder_summary` VARCHAR(255) DEFAULT 'Medication and appointment alerts',

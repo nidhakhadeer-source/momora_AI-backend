@@ -439,6 +439,42 @@
                                                   }
                                   },
                                   {
+                                      "name":  "Upload Profile Photo (profile_photo_upload.php)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "formdata",
+                                                                   "formdata":  [
+                                                                                    {
+                                                                                        "key":  "user_id",
+                                                                                        "value":  "5",
+                                                                                        "type":  "text"
+                                                                                    },
+                                                                                    {
+                                                                                        "key":  "photo",
+                                                                                        "type":  "file",
+                                                                                        "src":  [
+
+                                                                                                ]
+                                                                                    }
+                                                                                ]
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{base_url}}/profile/profile_photo_upload.php",
+                                                                  "host":  [
+                                                                               "{{base_url}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "profile",
+                                                                               "profile_photo_upload.php"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
                                       "name":  "Get Pregnancy Details",
                                       "request":  {
                                                       "method":  "GET",

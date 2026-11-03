@@ -255,6 +255,7 @@ try {
             p.gender,
             p.blood_group,
             p.address,
+            p.profile_photo,
             p.is_care_team_sharing_on,
             p.reminder_summary,
             p.clinical_background,
@@ -265,6 +266,10 @@ try {
     );
     $fetchStmt->execute([$userId]);
     $updated = $fetchStmt->fetch();
+
+    $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $photoUrl = !empty($updated['profile_photo']) ? ($scheme . '://' . $host . '/momora-AI/' . $updated['profile_photo']) : null;
 
     respond(200, [
         'success' => true,
@@ -280,6 +285,8 @@ try {
             'gender' => $updated['gender'],
             'blood_group' => $updated['blood_group'],
             'address' => $updated['address'],
+            'profile_photo' => $updated['profile_photo'] ?? null,
+            'photo_url' => $photoUrl,
             'is_care_team_sharing_on' => (bool)($updated['is_care_team_sharing_on'] ?? true),
             'reminder_summary' => $updated['reminder_summary'],
             'clinical_background' => $updated['clinical_background'],
@@ -296,3 +303,4 @@ try {
         'message' => 'Database operation failed: ' . $e->getMessage()
     ]);
 }
+

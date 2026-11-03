@@ -19,6 +19,7 @@ $stmt = $pdo->prepare(
         p.blood_group,
         p.gender,
         p.address,
+        p.profile_photo,
         p.is_care_team_sharing_on,
         p.reminder_summary,
         d.name AS care_team_doctor_name
@@ -44,6 +45,14 @@ foreach ($words as $w) {
 }
 $avatarInitials = substr($initials, 0, 2) ?: 'PT';
 
+// Generate full public URL for profile photo if uploaded
+$photoUrl = null;
+if (!empty($profile['profile_photo'])) {
+    $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $photoUrl = $scheme . '://' . $host . '/momora-AI/' . $profile['profile_photo'];
+}
+
 // Format date of birth nicely if set
 $dobFormatted = $profile['date_of_birth'] ?? '';
 if (!empty($profile['date_of_birth'])) {
@@ -57,6 +66,8 @@ respond(200, [
     'success' => true,
     'data' => [
         'avatarInitials' => $avatarInitials,
+        'profilePhoto' => $profile['profile_photo'] ?? null,
+        'photoUrl' => $photoUrl,
         'patientName' => $profile['full_name'],
         'patientId' => $patientCode,
         'fullName' => $profile['full_name'],
