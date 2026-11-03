@@ -15,6 +15,11 @@ cache/
 *.sublime-project
 *.sublime-workspace
 
+# Environment & Secrets (Never commit secrets)
+.env
+.env.local
+.env.*.local
+
 # Uploads (ignore user uploaded images, retain structure and security)
 uploads/profiles/*
 !uploads/profiles/.gitkeep
