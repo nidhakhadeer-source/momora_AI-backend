@@ -268,6 +268,236 @@
             ]
         },
         {
+            "name": "Tokens & Device Management",
+            "item": [
+                {
+                    "name": "1. Register Valid Device Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 5,\n  \"token\": \"sample_device_token_maya_pixel_01\",\n  \"device_info\": \"Google Pixel 7 - Android 14\",\n  \"expires_in_days\": 30\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tokens/token_register.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tokens",
+                                "token_register.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. Register Same Token Again (Update/Prevent Duplicate)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 5,\n  \"token\": \"sample_device_token_maya_pixel_01\",\n  \"device_info\": \"Google Pixel 7 - Updated Settings\",\n  \"expires_in_days\": 60\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tokens/token_register.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tokens",
+                                "token_register.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3. Register Token - Missing user_id Validation",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"sample_device_token_missing_uid_01\",\n  \"device_info\": \"Android Device\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tokens/token_register.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tokens",
+                                "token_register.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "4. Register Token - Invalid user_id Validation",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 99999,\n  \"token\": \"sample_device_token_invalid_uid_01\",\n  \"device_info\": \"Android Device\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tokens/token_register.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tokens",
+                                "token_register.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "5. Fetch Tokens - Valid User (Patient 5)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/tokens/token_fetch.php?user_id=5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tokens",
+                                "token_fetch.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "user_id",
+                                    "value": "5"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "6. Fetch Tokens - Invalid User",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/tokens/token_fetch.php?user_id=99999",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tokens",
+                                "token_fetch.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "user_id",
+                                    "value": "99999"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "7. Delete Token - Valid User Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 5,\n  \"token\": \"sample_device_token_maya_pixel_01\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tokens/token_delete.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tokens",
+                                "token_delete.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "8. Delete Token - Attempt to Delete Another User's Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 2,\n  \"token\": \"sample_device_token_maya_pixel_01\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tokens/token_delete.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tokens",
+                                "token_delete.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "9. Fetch Tokens - Verify After Deletion",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/tokens/token_fetch.php?user_id=5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tokens",
+                                "token_fetch.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "user_id",
+                                    "value": "5"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "2. Patient Dashboard & Profile",
             "item": [
                 {
