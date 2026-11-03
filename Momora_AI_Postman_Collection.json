@@ -498,6 +498,266 @@
             ]
         },
         {
+            "name": "Notifications Management",
+            "item": [
+                {
+                    "name": "1. Create Valid Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 5,\n  \"title\": \"Prenatal Vitamin Reminder\",\n  \"subtitle\": \"400 IU Iron & Vitamin D with lunch\",\n  \"detail_text\": \"Take with water or citrus juice for better absorption\",\n  \"type\": \"REMINDER\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_create.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_create.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. Create Notification - Missing Fields Validation",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 5,\n  \"title\": \"\",\n  \"subtitle\": \"\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_create.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_create.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3. Create Notification - Invalid user_id Validation",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 99999,\n  \"title\": \"Appointment Reminder\",\n  \"subtitle\": \"Dr Amelia Chen at 10:00 AM\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_create.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_create.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "4. Fetch Notifications - Valid User (Patient 5)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_fetch.php?user_id=5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_fetch.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "user_id",
+                                    "value": "5"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "5. Fetch Unread Notifications Only",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_fetch.php?user_id=5&unread_only=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_fetch.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "user_id",
+                                    "value": "5"
+                                },
+                                {
+                                    "key": "unread_only",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "6. Mark One Notification as Read",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 5,\n  \"notification_id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_mark_read.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_mark_read.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "7. Mark All Notifications as Read",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 5\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_mark_all_read.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_mark_all_read.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "8. Delete Notification - Valid User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 5,\n  \"notification_id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_delete.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_delete.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "9. Attempt Access Another User's Notification",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user_id\": 2,\n  \"notification_id\": 2\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_mark_read.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_mark_read.php"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "10. Fetch Notifications - Verify After Deletion",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/notifications/notification_fetch.php?user_id=5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "notification_fetch.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "user_id",
+                                    "value": "5"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "2. Patient Dashboard & Profile",
             "item": [
                 {
