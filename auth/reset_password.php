@@ -160,3 +160,4 @@ try {
         'message' => 'Database operation failed: ' . $e->getMessage()
     ]);
 }
+
