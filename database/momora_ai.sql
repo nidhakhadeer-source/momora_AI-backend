@@ -53,6 +53,23 @@ CREATE TABLE IF NOT EXISTS `user_tokens` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
+-- 2b. Password Resets (Role-restricted recovery; Admins strictly excluded)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `password_resets` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `email` VARCHAR(190) NOT NULL,
+    `reset_token` VARCHAR(64) NOT NULL,
+    `expires_at` DATETIME NOT NULL,
+    `is_used` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_resets_token` (`reset_token`),
+    INDEX `idx_resets_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------------------------------
 -- 3. Patient Profiles (Demographics, Medical Background, Assigned Doctor)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `profiles` (

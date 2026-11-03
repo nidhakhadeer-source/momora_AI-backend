@@ -264,6 +264,269 @@
                             ]
                         }
                     }
+                },
+                {
+                    "name": "Forgot Password - Admin (Blocked - 403 Forbidden)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"admin@willow.example\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/forgot_password.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "forgot_password.php"
+                            ]
+                        },
+                        "description": "Professor Requirement: Admin accounts are strictly prohibited from recovering passwords via public self-service. Returns 403 Forbidden."
+                    }
+                },
+                {
+                    "name": "Reset Password - Admin (Blocked - 403 Forbidden)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"admin@willow.example\",\n    \"reset_token\": \"dummy_admin_reset_token\",\n    \"new_password\": \"NewAdminPass123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/reset_password.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "reset_password.php"
+                            ]
+                        },
+                        "description": "Professor Requirement: Admin accounts cannot be reset via the public reset endpoint. Returns 403 Forbidden."
+                    }
+                },
+                {
+                    "name": "Forgot Password - Patient (Allowed - 200 OK)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.data && jsonData.data.reset_token) {",
+                                    "    pm.collectionVariables.set(\"patient_reset_token\", jsonData.data.reset_token);",
+                                    "    console.log(\"Saved patient_reset_token: \" + jsonData.data.reset_token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"maya.patel@example.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/forgot_password.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "forgot_password.php"
+                            ]
+                        },
+                        "description": "Allowed for pregnant patients. Generates a secure reset token valid for 1 hour."
+                    }
+                },
+                {
+                    "name": "Forgot Password - Doctor (Allowed - 200 OK)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"amelia.chen@willow.example\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/forgot_password.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "forgot_password.php"
+                            ]
+                        },
+                        "description": "Allowed for clinical doctors. Generates a secure reset token valid for 1 hour."
+                    }
+                },
+                {
+                    "name": "Reset Password - Patient (Allowed - 200 OK)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"maya.patel@example.com\",\n    \"reset_token\": \"{{patient_reset_token}}\",\n    \"new_password\": \"Password123!\",\n    \"confirm_password\": \"Password123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/reset_password.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "reset_password.php"
+                            ]
+                        },
+                        "description": "Resets the password for patient Maya Patel using valid reset token. Hashes with PASSWORD_DEFAULT and updates users table."
+                    }
+                },
+                {
+                    "name": "Forgot Password - Nonexistent Email (404 Not Found)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"nonexistent.user999@example.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/forgot_password.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "forgot_password.php"
+                            ]
+                        },
+                        "description": "Rejects password recovery for unregistered email with 404 Not Found."
+                    }
+                },
+                {
+                    "name": "Forgot Password - Missing Email (422 Unprocessable)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/forgot_password.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "forgot_password.php"
+                            ]
+                        },
+                        "description": "Rejects empty input with 422 Unprocessable Entity."
+                    }
+                },
+                {
+                    "name": "Reset Password - Missing Password (422 Unprocessable)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"maya.patel@example.com\",\n    \"reset_token\": \"sample_token\",\n    \"new_password\": \"\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/reset_password.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "reset_password.php"
+                            ]
+                        },
+                        "description": "Rejects empty new_password with 422 Unprocessable Entity."
+                    }
                 }
             ]
         },
