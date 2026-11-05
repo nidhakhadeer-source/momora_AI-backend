@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 04, 2026 at 08:29 AM
+-- Generation Time: Nov 05, 2026 at 05:07 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -505,9 +505,9 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `name`, `email`, `password_hash`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, 'Test User', 'test@example.com', '$2y$10$Yq.0OkYjS5c/2U4A04ZloOjNj.bRI.TinYwqjnm6dKfCuKFjNQR16', 'patient', 1, '2026-10-28 07:26:57', '2026-10-29 08:37:10'),
 (2, 'Nidha Test', 'nidha.test@example.com', '$2y$10$Yq.0OkYjS5c/2U4A04ZloOjNj.bRI.TinYwqjnm6dKfCuKFjNQR16', 'patient', 1, '2026-10-29 05:04:54', '2026-10-29 08:37:10'),
-(3, 'Dr Amelia Chen', 'amelia.chen@willow.example', '$2y$10$Yq.0OkYjS5c/2U4A04ZloOjNj.bRI.TinYwqjnm6dKfCuKFjNQR16', 'doctor', 0, '2026-10-29 08:33:18', '2026-11-04 07:03:47'),
+(3, 'Dr Amelia Chen', 'amelia.chen@willow.example', '$2y$10$Yq.0OkYjS5c/2U4A04ZloOjNj.bRI.TinYwqjnm6dKfCuKFjNQR16', 'doctor', 1, '2026-10-29 08:33:18', '2026-11-05 03:41:00'),
 (4, 'Alex Morgan', 'admin@willow.example', '$2y$10$Yq.0OkYjS5c/2U4A04ZloOjNj.bRI.TinYwqjnm6dKfCuKFjNQR16', 'admin', 1, '2026-10-29 08:33:18', '2026-10-29 08:37:10'),
-(5, 'Maya Patel Sharma', 'maya.patel@example.com', '$2y$10$cCExigysKGS1Zcp/a5Vdg.RM6nPrTXf/KlGn4Mt.TypleccoZWP.W', 'patient', 0, '2026-10-29 08:33:18', '2026-11-04 07:04:02'),
+(5, 'Maya Patel Sharma', 'maya.patel@example.com', '$2y$10$cCExigysKGS1Zcp/a5Vdg.RM6nPrTXf/KlGn4Mt.TypleccoZWP.W', 'patient', 1, '2026-10-29 08:33:18', '2026-11-05 03:41:11'),
 (6, 'Sarah Jenkins', 'sarah.j@example.com', '$2y$10$Hxzff3yUEzz/uR.awZViEe48iMfZ/AkV8yXLtKXF0KagLqrt.fq.m', 'patient', 1, '2026-10-29 08:56:42', '2026-10-29 08:56:42'),
 (7, 'Nidha', 'nidha@example.com', '$2y$10$IJoAKbLmzM8BFNnMiPwDIupy/RSI3jaXDdmSSMZYteodeOD1j7s6q', 'patient', 1, '2026-10-30 03:42:00', '2026-10-30 03:42:00'),
 (8, 'Priya Sharma', 'priya.sharma@example.com', '$2y$10$/etgwQDOmIEnMXg2wvAi8e.Heckto/eqkx0MgRnNnZFCMoIhnQt.K', 'patient', 1, '2026-10-30 06:57:46', '2026-10-30 06:57:46'),
@@ -556,7 +556,11 @@ INSERT INTO `user_tokens` (`id`, `user_id`, `token`, `device_info`, `expires_at`
 (22, 5, 'dcb78d7dcc50e90272e6fe63bb35d1bd642d34ed9503700084df1a17a7de9690', 'PostmanRuntime/2.12.2', '2026-12-04 06:11:11', '2026-11-04 05:11:11'),
 (23, 3, 'e74c2e7301ebd517f9172c0bea0af432c8b9d6fa3a017f7f4a983ad8c2a12bf0', 'PostmanRuntime/2.12.2', '2026-12-04 06:17:18', '2026-11-04 05:17:18'),
 (24, 5, 'fbbd376eeba74027cd3a3b0fede76fd90ae3097e2ecebf99794146f1a564116b', 'PostmanRuntime/2.12.2', '2026-12-04 06:17:32', '2026-11-04 05:17:32'),
-(26, 10, 'bd3026321519c9b98d44d7204e5369417d7239dce2ecdd1b02e35ea0edb8415d', 'PostmanRuntime/2.12.2', '2026-12-04 06:22:43', '2026-11-04 05:22:43');
+(26, 10, 'bd3026321519c9b98d44d7204e5369417d7239dce2ecdd1b02e35ea0edb8415d', 'PostmanRuntime/2.12.2', '2026-12-04 06:22:43', '2026-11-04 05:22:43'),
+(27, 9, '94f1c6d2e7ecb3017e64b5dc66d4e56693d2e0f773ad0adb372f39b1a82f94e8', 'okhttp/3.14.9', '2026-12-05 04:32:51', '2026-11-05 03:32:51'),
+(28, 4, '86ada0ef53961f7692db68e4d5dc3026d7528b97e3b747824856d4e7d4139851', 'okhttp/3.14.9', '2026-12-05 04:36:58', '2026-11-05 03:36:58'),
+(29, 3, 'f42e20e37e532797aef1cfa97b76ad7c9c68787e670a7372d99cbd4c70bf1b6c', 'PostmanRuntime/2.14.0', '2026-12-05 04:46:26', '2026-11-05 03:46:26'),
+(30, 3, 'e5a0530c90409075a6dcb6324c3697f5de47c0bfb35edf33ecc5123aa42efb2a', 'okhttp/3.14.9', '2026-12-05 04:48:31', '2026-11-05 03:48:31');
 
 -- --------------------------------------------------------
 
@@ -838,7 +842,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_tokens`
 --
 ALTER TABLE `user_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `weight_logs`
