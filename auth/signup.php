@@ -23,6 +23,43 @@ if (empty($name) || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($passwo
     ]);
 }
 
+// Validate date of birth: reject if missing, invalid format, in the future, or under 18
+if (empty($dateOfBirth)) {
+    respond(400, [
+        'success' => false,
+        'message' => 'Please provide a valid date of birth'
+    ]);
+}
+
+$parsedDob = strtotime($dateOfBirth);
+if ($parsedDob === false) {
+    respond(400, [
+        'success' => false,
+        'message' => 'Invalid date of birth format'
+    ]);
+}
+
+$dobDate = new DateTime();
+$dobDate->setTimestamp($parsedDob);
+$today = new DateTime('today');
+
+if ($dobDate > $today) {
+    respond(400, [
+        'success' => false,
+        'message' => 'Date of birth cannot be in the future'
+    ]);
+}
+
+$age = $dobDate->diff($today)->y;
+if ($age < 18) {
+    respond(400, [
+        'success' => false,
+        'message' => 'You must be at least 18 years old to register'
+    ]);
+}
+
+$dobSql = date('Y-m-d', $parsedDob);
+
 try {
     $pdo->beginTransaction();
 
@@ -53,15 +90,6 @@ try {
     $docStmt = $pdo->query('SELECT id FROM users WHERE role = "doctor" AND is_active = 1 LIMIT 1');
     $defaultDoctor = $docStmt->fetch();
     $doctorId = $defaultDoctor ? (int)$defaultDoctor['id'] : null;
-
-    // Convert date of birth if possible
-    $dobSql = null;
-    if (!empty($dateOfBirth)) {
-        $parsedTime = strtotime($dateOfBirth);
-        if ($parsedTime !== false) {
-            $dobSql = date('Y-m-d', $parsedTime);
-        }
-    }
 
     // Create default profile
     $profStmt = $pdo->prepare(
