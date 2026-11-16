@@ -56,31 +56,8 @@ function buildDoctorPhotoUrl($photoPath) {
 try {
     $pdo->exec("SET NAMES utf8mb4");
 
-    $input = getInput();
-    $userIdRaw = $input['user_id'] ?? ($_GET['user_id'] ?? null);
-
-    // If user_id is omitted, check for authenticated token fallback
-    if ($userIdRaw === null || trim((string)$userIdRaw) === '') {
-        $token = getBearerToken();
-        if (!empty($token)) {
-            $tStmt = $pdo->prepare(
-                'SELECT u.id, u.role FROM user_tokens t JOIN users u ON u.id = t.user_id WHERE t.token = ? AND t.expires_at > NOW()'
-            );
-            $tStmt->execute([$token]);
-            $tUser = $tStmt->fetch();
-            if ($tUser) {
-                $userIdRaw = $tUser['id'];
-            }
-        }
-    }
-
-    $userId = filter_var($userIdRaw, FILTER_VALIDATE_INT);
-    if ($userId === false || $userId <= 0) {
-        respond(400, [
-            'success' => false,
-            'message' => 'Valid user_id is required'
-        ]);
-    }
+    $authUser = require_auth(['doctor']);
+    $userId = (int)$authUser['id'];
 
     // Query user and doctor_profiles table
     $stmt = $pdo->prepare(

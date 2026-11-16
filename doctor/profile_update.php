@@ -56,50 +56,10 @@ function buildDoctorPhotoUrl($photoPath) {
 try {
     $pdo->exec("SET NAMES utf8mb4");
 
+    $user = require_auth(['doctor']);
+    $userId = (int)$user['id'];
+
     $input = getInput();
-    $userIdRaw = $input['user_id'] ?? ($_GET['user_id'] ?? ($_POST['user_id'] ?? null));
-
-    // If user_id is omitted, check for authenticated token fallback
-    if ($userIdRaw === null || trim((string)$userIdRaw) === '') {
-        $token = getBearerToken();
-        if (!empty($token)) {
-            $tStmt = $pdo->prepare(
-                'SELECT u.id, u.role FROM user_tokens t JOIN users u ON u.id = t.user_id WHERE t.token = ? AND t.expires_at > NOW()'
-            );
-            $tStmt->execute([$token]);
-            $tUser = $tStmt->fetch();
-            if ($tUser) {
-                $userIdRaw = $tUser['id'];
-            }
-        }
-    }
-
-    $userId = filter_var($userIdRaw, FILTER_VALIDATE_INT);
-    if ($userId === false || $userId <= 0) {
-        respond(400, [
-            'success' => false,
-            'message' => 'Valid user_id is required'
-        ]);
-    }
-
-    // Verify user exists and is a doctor
-    $userStmt = $pdo->prepare('SELECT id, name, email, role, is_active FROM users WHERE id = ?');
-    $userStmt->execute([$userId]);
-    $user = $userStmt->fetch();
-
-    if (!$user || $user['role'] !== 'doctor') {
-        respond(404, [
-            'success' => false,
-            'message' => 'Doctor profile not found'
-        ]);
-    }
-
-    if ((int)$user['is_active'] !== 1) {
-        respond(403, [
-            'success' => false,
-            'message' => 'Account access has been deactivated by administrator'
-        ]);
-    }
 
     // Collect updates (explicitly excluding email and role)
     $nameUpdate = null;

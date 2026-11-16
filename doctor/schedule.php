@@ -5,7 +5,7 @@
 
 require_once __DIR__ . '/../config/config.php';
 
-$user = authenticateUser($pdo, 'doctor');
+$user = require_auth(['doctor']);
 $doctorId = (int)$user['id'];
 
 $todayDate = date('d M Y');

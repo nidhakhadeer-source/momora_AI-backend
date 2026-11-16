@@ -5,7 +5,7 @@
 
 require_once __DIR__ . '/../config/config.php';
 
-$user = authenticateUser($pdo, 'doctor');
+$user = require_auth(['doctor']);
 $input = getInput();
 $patientId = filter_var($input['patientId'] ?? ($input['patient_id'] ?? 5), FILTER_VALIDATE_INT);
 if (!$patientId) $patientId = 5;

@@ -100,6 +100,93 @@ function getBearerToken() {
 }
 
 /**
+ * Require authentication and validate user role
+ *
+ * @param array $roles Allowed roles (e.g. ['doctor'])
+ * @return array ['id' => int, 'role' => string, 'name' => string, 'email' => string]
+ */
+function require_auth(array $roles = []) {
+    global $pdo;
+
+    // 1. Read Authorization: Bearer <token> header (checking HTTP_AUTHORIZATION and getallheaders())
+    $authHeader = null;
+    if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+        $authHeader = trim($_SERVER['HTTP_AUTHORIZATION']);
+    } elseif (!empty($_SERVER['Authorization'])) {
+        $authHeader = trim($_SERVER['Authorization']);
+    } elseif (function_exists('getallheaders')) {
+        $all = getallheaders();
+        foreach ($all as $k => $v) {
+            if (strcasecmp($k, 'Authorization') === 0) {
+                $authHeader = trim($v);
+                break;
+            }
+        }
+    } elseif (function_exists('apache_request_headers')) {
+        $apacheHeaders = apache_request_headers();
+        foreach ($apacheHeaders as $k => $v) {
+            if (strcasecmp($k, 'Authorization') === 0) {
+                $authHeader = trim($v);
+                break;
+            }
+        }
+    }
+
+    $token = null;
+    if (!empty($authHeader) && preg_match('/Bearer\s+(\S+)/i', $authHeader, $matches)) {
+        $token = $matches[1];
+    }
+
+    if (empty($token)) {
+        respond(401, [
+            'success' => false,
+            'message' => 'Unauthorized: Missing or invalid authentication token'
+        ]);
+    }
+
+    // 2. Look the token up in user_tokens (not expired), join users, and require users.is_active = 1
+    $stmt = $pdo->prepare(
+        'SELECT u.id, u.name, u.email, u.role, u.is_active
+         FROM user_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token = ? AND t.expires_at > NOW()'
+    );
+    $stmt->execute([$token]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        respond(401, [
+            'success' => false,
+            'message' => 'Unauthorized: Missing or invalid authentication token'
+        ]);
+    }
+
+    if ((int)$user['is_active'] !== 1) {
+        respond(403, [
+            'success' => false,
+            'message' => 'Forbidden: Account has been deactivated'
+        ]);
+    }
+
+    // 3. Return the user's id and role, or respond 403 (role not in $roles)
+    if (!empty($roles)) {
+        if (!in_array($user['role'], $roles, true)) {
+            respond(403, [
+                'success' => false,
+                'message' => 'Forbidden: You do not have permission to access this resource'
+            ]);
+        }
+    }
+
+    return [
+        'id' => (int)$user['id'],
+        'role' => $user['role'],
+        'name' => $user['name'] ?? '',
+        'email' => $user['email'] ?? ''
+    ];
+}
+
+/**
  * Authenticate user via bearer token or user_id fallback if token omitted
  */
 function authenticateUser($pdo, $requiredRole = null) {
