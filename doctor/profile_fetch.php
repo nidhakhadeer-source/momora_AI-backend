@@ -22,17 +22,21 @@ function buildDoctorPhotoUrl($photoPath) {
     if (empty($photoPath)) {
         return null;
     }
-    if (preg_match('/^https?:\/\//i', $photoPath)) {
+
+    // If an existing localhost URL is stored, extract the relative uploads path
+    if (preg_match('#^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(?:/.*)?/(uploads/.+)$#i', $photoPath, $m)) {
+        $photoPath = $m[1];
+    } elseif (preg_match('/^https?:\/\//i', $photoPath)) {
         return $photoPath;
     }
 
-    $isHttps = (
-        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
-        (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ||
-        (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
-    );
-    $scheme = $isHttps ? 'https' : 'http';
-    $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? ''));
+    $proto = !empty($_SERVER['HTTP_X_FORWARDED_PROTO'])
+        ? trim(explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO'])[0])
+        : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+
+    $host = !empty($_SERVER['HTTP_X_FORWARDED_HOST'])
+        ? trim(explode(',', $_SERVER['HTTP_X_FORWARDED_HOST'])[0])
+        : ($_SERVER['HTTP_HOST'] ?? 'localhost');
 
     $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
     $scriptDir = dirname($scriptName);
@@ -42,12 +46,11 @@ function buildDoctorPhotoUrl($photoPath) {
     }
 
     $cleanPath = ltrim(str_replace('\\', '/', $photoPath), '/');
-
-    if (!empty($host)) {
-        return $scheme . '://' . $host . $appBaseDir . '/' . $cleanPath;
+    if (strpos($cleanPath, 'momora-AI/') === 0) {
+        $cleanPath = substr($cleanPath, strlen('momora-AI/'));
     }
 
-    return $appBaseDir . '/' . $cleanPath;
+    return $proto . '://' . $host . $appBaseDir . '/' . $cleanPath;
 }
 
 try {

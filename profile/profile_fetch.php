@@ -48,9 +48,35 @@ $avatarInitials = substr($initials, 0, 2) ?: 'PT';
 // Generate full public URL for profile photo if uploaded
 $photoUrl = null;
 if (!empty($profile['profile_photo'])) {
-    $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $photoUrl = $scheme . '://' . $host . '/momora-AI/' . $profile['profile_photo'];
+    $photoPath = $profile['profile_photo'];
+    if (preg_match('#^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(?:/.*)?/(uploads/.+)$#i', $photoPath, $m)) {
+        $photoPath = $m[1];
+    }
+    if (preg_match('/^https?:\/\//i', $photoPath)) {
+        $photoUrl = $photoPath;
+    } else {
+        $proto = !empty($_SERVER['HTTP_X_FORWARDED_PROTO'])
+            ? trim(explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO'])[0])
+            : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+
+        $host = !empty($_SERVER['HTTP_X_FORWARDED_HOST'])
+            ? trim(explode(',', $_SERVER['HTTP_X_FORWARDED_HOST'])[0])
+            : ($_SERVER['HTTP_HOST'] ?? 'localhost');
+
+        $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+        $scriptDir = dirname($scriptName);
+        $appBaseDir = dirname($scriptDir);
+        if ($appBaseDir === '/' || $appBaseDir === '\\' || $appBaseDir === '.') {
+            $appBaseDir = '';
+        }
+
+        $cleanPath = ltrim(str_replace('\\', '/', $photoPath), '/');
+        if (strpos($cleanPath, 'momora-AI/') === 0) {
+            $cleanPath = substr($cleanPath, strlen('momora-AI/'));
+        }
+
+        $photoUrl = $proto . '://' . $host . $appBaseDir . '/' . $cleanPath;
+    }
 }
 
 // Format date of birth nicely if set
