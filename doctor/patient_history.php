@@ -7,33 +7,47 @@ require_once __DIR__ . '/../config/config.php';
 
 $user = require_auth(['doctor']);
 $input = getInput();
-$patientId = filter_var($input['patientId'] ?? ($input['patient_id'] ?? 5), FILTER_VALIDATE_INT);
-if (!$patientId) $patientId = 5;
+$patientIdRaw = $input['patientId'] ?? ($input['patient_id'] ?? ($_GET['patientId'] ?? ($_GET['patient_id'] ?? null)));
+$patientId = filter_var($patientIdRaw, FILTER_VALIDATE_INT);
+if ($patientId === false || $patientId <= 0) {
+    respond(400, [
+        'success' => false,
+        'message' => 'patientId is required and must be a valid integer'
+    ]);
+}
 
 $stmt = $pdo->prepare(
-    'SELECT u.name, p.patient_code, p.clinical_background, pd.gestational_weeks, pd.gestational_days, pd.estimated_due_date
+    'SELECT u.id, u.name, p.patient_code, p.clinical_background, p.updated_at AS profile_updated_at,
+            pd.gestational_weeks, pd.gestational_days, pd.estimated_due_date
      FROM users u
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN pregnancy_details pd ON pd.user_id = u.id
-     WHERE u.id = ?'
+     WHERE u.id = ? AND u.role = "patient"'
 );
 $stmt->execute([$patientId]);
 $patient = $stmt->fetch();
 
-$name = $patient['name'] ?? 'Maya Patel';
-$words = explode(' ', trim($name));
-$initials = (count($words) >= 2) ? (strtoupper($words[0][0]) . strtoupper($words[1][0])) : 'MP';
+if (!$patient) {
+    respond(404, [
+        'success' => false,
+        'message' => 'Patient not found'
+    ]);
+}
+
+$name = trim($patient['name'] ?? '');
+$words = explode(' ', $name);
+$initials = (count($words) >= 2) ? (strtoupper($words[0][0]) . strtoupper($words[1][0])) : (mb_strtoupper(mb_substr($name, 0, 2)) ?: 'PT');
 
 $weeks = $patient['gestational_weeks'] ?? 24;
 $days = $patient['gestational_days'] ?? 3;
 $gestText = "{$weeks}w {$days}d";
 
-$edd = $patient['estimated_due_date'] ? ('Due ' . date('d M Y', strtotime($patient['estimated_due_date']))) : 'Due 13 Feb 2027';
+$edd = $patient['estimated_due_date'] ? ('Due ' . date('d M Y', strtotime($patient['estimated_due_date']))) : 'Due date not set';
 $patientCode = $patient['patient_code'] ?: ('P-' . (10000 + $patientId));
-$clinical = $patient['clinical_background'] ?: 'Age 29 · O positive · First pregnancy (G1 P0). No known drug allergies or chronic conditions reported.';
+$clinical = $patient['clinical_background'] ?: '';
 
-// Fetch patient's medications
-$mStmt = $pdo->prepare('SELECT id, name, dosage_and_time, is_taken FROM medications WHERE user_id = ?');
+// Fetch patient's medications strictly from database
+$mStmt = $pdo->prepare('SELECT id, name, dosage_and_time, is_taken FROM medications WHERE user_id = ? ORDER BY id ASC');
 $mStmt->execute([$patientId]);
 $meds = $mStmt->fetchAll();
 
@@ -42,27 +56,76 @@ foreach ($meds as $m) {
     $medItems[] = [
         'id' => (string)$m['id'],
         'name' => $m['name'],
-        'dosageDetails' => $m['dosage_and_time'],
+        'dosageDetails' => $m['dosage_and_time'] ?? '',
         'isTakenToday' => (bool)$m['is_taken']
     ];
 }
 
-if (empty($medItems)) {
-    $medItems = [
-        [
-            'id' => '1',
-            'name' => 'Prenatal vitamin',
-            'dosageDetails' => '1 tablet daily · 08:00 · Taken today',
-            'isTakenToday' => true
-        ],
-        [
-            'id' => '2',
-            'name' => 'Vitamin D · 400 IU',
-            'dosageDetails' => '1 tablet daily · 20:00',
-            'isTakenToday' => false
-        ]
+// Fetch real reports from medical_reports: id, title, report date, category, size
+$rStmt = $pdo->prepare(
+    'SELECT id, title, date_and_size_text, category, file_type, created_at
+     FROM medical_reports
+     WHERE user_id = ?
+     ORDER BY created_at DESC'
+);
+$rStmt->execute([$patientId]);
+$reportsRows = $rStmt->fetchAll();
+
+$reportsList = [];
+foreach ($reportsRows as $r) {
+    $reportDate = !empty($r['created_at']) ? date('d M Y', strtotime($r['created_at'])) : '';
+    $size = '1.2 MB';
+    if (!empty($r['date_and_size_text'])) {
+        $parts = preg_split('/(\s*·\s*|\s*\?\?\s*)/u', $r['date_and_size_text']);
+        if (!empty($parts[0])) {
+            $reportDate = trim($parts[0]);
+        }
+        if (count($parts) >= 3) {
+            $size = trim($parts[2]);
+        } elseif (count($parts) == 2) {
+            $size = trim($parts[1]);
+        }
+    }
+    $reportsList[] = [
+        'id' => (string)$r['id'],
+        'title' => $r['title'],
+        'reportDate' => $reportDate,
+        'report_date' => $reportDate,
+        'category' => strtoupper($r['category'] ?? 'ALL'),
+        'size' => $size
     ];
 }
+
+// Fetch real visits from appointments: date, time, status, notes
+$vStmt = $pdo->prepare(
+    'SELECT id, appointment_date, appointment_time, status, location_notes, appointment_type
+     FROM appointments
+     WHERE patient_id = ?
+     ORDER BY appointment_date DESC, appointment_time DESC'
+);
+$vStmt->execute([$patientId]);
+$visitsRows = $vStmt->fetchAll();
+
+$visitsList = [];
+foreach ($visitsRows as $v) {
+    $vDate = !empty($v['appointment_date']) ? date('d M Y', strtotime($v['appointment_date'])) : '';
+    $notes = $v['location_notes'] ?: ($v['appointment_type'] ?? '');
+    $visitsList[] = [
+        'id' => (string)$v['id'],
+        'date' => $vDate,
+        'time' => $v['appointment_time'] ?? '',
+        'status' => $v['status'] ?? 'Scheduled',
+        'notes' => $notes
+    ];
+}
+
+// Recent care record from real reports (if any, otherwise null)
+$latestReport = $reportsList[0] ?? null;
+$recentCareRecordTitle = $latestReport ? $latestReport['title'] : null;
+$recentCareRecordDetails = $latestReport ? ($latestReport['reportDate'] . ' · ' . $latestReport['category']) : null;
+
+// Patient confirmed date from profile updated timestamp (if available, otherwise null)
+$patientConfirmedDate = !empty($patient['profile_updated_at']) ? ('Patient confirmed · ' . date('d M Y', strtotime($patient['profile_updated_at']))) : null;
 
 respond(200, [
     'success' => true,
@@ -73,10 +136,12 @@ respond(200, [
         'dueDateText' => $edd,
         'patientIdText' => $patientCode,
         'clinicalBackgroundText' => $clinical,
-        'patientConfirmedDateText' => 'Patient confirmed · 05 Oct 2026',
+        'patientConfirmedDateText' => $patientConfirmedDate,
         'medications' => $medItems,
-        'recentCareRecordTitle' => 'Complete blood count',
-        'recentCareRecordDetails' => '28 Oct 2026 · Reviewed 27 Oct 2026'
+        'reports' => $reportsList,
+        'visits' => $visitsList,
+        'recentCareRecordTitle' => $recentCareRecordTitle,
+        'recentCareRecordDetails' => $recentCareRecordDetails
     ]
 ]);
 
