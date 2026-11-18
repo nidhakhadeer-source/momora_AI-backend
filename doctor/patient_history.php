@@ -55,8 +55,8 @@ $medItems = [];
 foreach ($meds as $m) {
     $medItems[] = [
         'id' => (string)$m['id'],
-        'name' => $m['name'],
-        'dosageDetails' => $m['dosage_and_time'] ?? '',
+        'name' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$m['name']),
+        'dosageDetails' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)($m['dosage_and_time'] ?? '')),
         'isTakenToday' => (bool)$m['is_taken']
     ];
 }
@@ -88,7 +88,7 @@ foreach ($reportsRows as $r) {
     }
     $reportsList[] = [
         'id' => (string)$r['id'],
-        'title' => $r['title'],
+        'title' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$r['title']),
         'reportDate' => $reportDate,
         'report_date' => $reportDate,
         'category' => strtoupper($r['category'] ?? 'ALL'),
@@ -115,7 +115,7 @@ foreach ($visitsRows as $v) {
         'date' => $vDate,
         'time' => $v['appointment_time'] ?? '',
         'status' => $v['status'] ?? 'Scheduled',
-        'notes' => $notes
+        'notes' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$notes)
     ];
 }
 

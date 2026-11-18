@@ -262,3 +262,46 @@ function generateUserToken($pdo, $userId, $deviceInfo = 'Android Device') {
         'expires_at' => $expiresAt
     ];
 }
+
+/**
+ * Compute gestational age dynamically from pregnancy_details (LMP or EDD)
+ *
+ * @param string|null $lmp Last menstrual period (Y-m-d)
+ * @param string|null $edd Estimated due date (Y-m-d)
+ * @param int|null $staticWeeks Fallback static gestational weeks
+ * @param int|null $staticDays Fallback static gestational days
+ * @return string Formatted age like "27w 4d" or empty string if not recorded
+ */
+function computeGestationalAge(?string $lmp, ?string $edd, ?int $staticWeeks = null, ?int $staticDays = null): string {
+    $now = time();
+    if (!empty($lmp)) {
+        $lmpTime = strtotime($lmp);
+        if ($lmpTime !== false && $lmpTime <= $now) {
+            $daysDiff = (int)floor(($now - $lmpTime) / 86400);
+            $w = (int)floor($daysDiff / 7);
+            $d = $daysDiff % 7;
+            if ($w >= 0 && $w <= 45) {
+                return "{$w}w {$d}d";
+            }
+        }
+    }
+    if (!empty($edd)) {
+        $eddTime = strtotime($edd);
+        if ($eddTime !== false) {
+            $daysUntilDue = (int)floor(($eddTime - $now) / 86400);
+            $daysElapsed = 280 - $daysUntilDue;
+            if ($daysElapsed >= 0) {
+                $w = (int)floor($daysElapsed / 7);
+                $d = $daysElapsed % 7;
+                if ($w >= 0 && $w <= 45) {
+                    return "{$w}w {$d}d";
+                }
+            }
+        }
+    }
+    if ($staticWeeks !== null && $staticWeeks > 0) {
+        $d = $staticDays ?? 0;
+        return "{$staticWeeks}w {$d}d";
+    }
+    return '';
+}

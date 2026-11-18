@@ -71,8 +71,8 @@ $items = [];
 foreach ($reports as $r) {
     $items[] = [
         'id' => (string)$r['id'],
-        'title' => $r['title'],
-        'dateAndSizeText' => $r['date_and_size_text'],
+        'title' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$r['title']),
+        'dateAndSizeText' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$r['date_and_size_text']),
         'category' => strtoupper($r['category']),
         'fileType' => $r['file_type'] ?: 'PDF'
     ];

@@ -73,7 +73,8 @@ $upcomingVisits = (int)($counts['upcoming_count'] ?? 0);
 
 // 3. Fetch appointments for $selectedDate
 $stmt = $pdo->prepare(
-    'SELECT a.*, u.name as patient_name, p.patient_code, pd.gestational_weeks, pd.gestational_days
+    'SELECT a.*, u.name as patient_name, p.patient_code,
+            pd.gestational_weeks, pd.gestational_days, pd.last_menstrual_period, pd.estimated_due_date
      FROM appointments a
      JOIN users u ON u.id = a.patient_id
      LEFT JOIN profiles p ON p.user_id = a.patient_id
@@ -86,7 +87,8 @@ $dateAppts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 4. Fetch the overall next appointment (from today onwards, not completed or cancelled)
 $nextStmt = $pdo->prepare(
-    'SELECT a.*, u.name as patient_name, p.patient_code, pd.gestational_weeks, pd.gestational_days
+    'SELECT a.*, u.name as patient_name, p.patient_code,
+            pd.gestational_weeks, pd.gestational_days, pd.last_menstrual_period, pd.estimated_due_date
      FROM appointments a
      JOIN users u ON u.id = a.patient_id
      LEFT JOIN profiles p ON p.user_id = a.patient_id
@@ -114,12 +116,20 @@ function formatMainAppointment($row) {
     }
 
     $patientCode = $row['patient_code'] ?: ('P-' . (10000 + (int)$row['patient_id']));
-    $gw = $row['gestational_weeks'];
-    $gd = $row['gestational_days'];
-    $gestText = ($gw !== null) ? "{$gw}w {$gd}d" : '';
+    
+    // Compute real gestational age dynamically from pregnancy_details
+    $gestText = computeGestationalAge(
+        $row['last_menstrual_period'] ?? null,
+        $row['estimated_due_date'] ?? null,
+        isset($row['gestational_weeks']) ? (int)$row['gestational_weeks'] : null,
+        isset($row['gestational_days']) ? (int)$row['gestational_days'] : null
+    );
+
     $dateStr = date('d M', strtotime($row['appointment_date']));
     $subtitleParts = [];
-    if ($gestText) $subtitleParts[] = "{$gestText} on {$dateStr}";
+    if (!empty($gestText)) {
+        $subtitleParts[] = "{$gestText} on {$dateStr}";
+    }
     $subtitleParts[] = "Patient {$patientCode}";
     $patientSubtitle = implode(' · ', $subtitleParts);
 

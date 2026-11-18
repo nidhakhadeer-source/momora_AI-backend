@@ -28,9 +28,10 @@ $offset = ($page - 1) * $limit;
 $countStmt = $pdo->prepare(
     'SELECT COUNT(*) FROM users u
      JOIN profiles p ON p.user_id = u.id
-     WHERE u.role = "patient" AND u.is_active = 1'
+     WHERE u.role = "patient" AND u.is_active = 1
+       AND p.assigned_doctor_id = ?'
 );
-$countStmt->execute();
+$countStmt->execute([$doctorId]);
 $total = (int)$countStmt->fetchColumn();
 $totalPages = $total > 0 ? (int)ceil($total / $limit) : 1;
 
@@ -48,53 +49,38 @@ $stmt = $pdo->prepare(
      JOIN profiles p ON p.user_id = u.id
      LEFT JOIN pregnancy_details pd ON pd.user_id = u.id
      WHERE u.role = "patient" AND u.is_active = 1
+       AND p.assigned_doctor_id = :doc_id
      ORDER BY u.id ASC
      LIMIT :limit OFFSET :offset'
 );
+$stmt->bindValue(':doc_id', $doctorId, PDO::PARAM_INT);
 $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
-$patients = $stmt->fetchAll();
+$patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $items = [];
-$now = time();
 
 foreach ($patients as $idx => $p) {
     $pId = (string)$p['id'];
     $code = $p['patient_code'] ?: ('P-' . (10000 + (int)$p['id']));
 
-    // Compute real gestational age dynamically
-    $gestText = null;
-    if (!empty($p['last_menstrual_period'])) {
-        $lmpTime = strtotime($p['last_menstrual_period']);
-        if ($lmpTime !== false && $lmpTime <= $now) {
-            $daysDiff = (int)floor(($now - $lmpTime) / 86400);
-            $w = (int)floor($daysDiff / 7);
-            $d = $daysDiff % 7;
-            $gestText = "{$w}w {$d}d";
-        }
-    }
-    if ($gestText === null && !empty($p['estimated_due_date'])) {
-        $eddTime = strtotime($p['estimated_due_date']);
-        if ($eddTime !== false) {
-            $daysUntilDue = (int)floor(($eddTime - $now) / 86400);
-            $daysElapsed = max(0, 280 - $daysUntilDue);
-            $w = (int)floor($daysElapsed / 7);
-            $d = $daysElapsed % 7;
-            $gestText = "{$w}w {$d}d";
-        }
-    }
-    if ($gestText === null) {
-        $weeks = (int)($p['gestational_weeks'] ?? 0);
-        $days = (int)($p['gestational_days'] ?? 0);
-        $gestText = ($weeks > 0 || $days > 0) ? "{$weeks}w {$days}d" : "Not recorded";
+    // Compute real gestational age dynamically from pregnancy_details
+    $gestText = computeGestationalAge(
+        $p['last_menstrual_period'] ?? null,
+        $p['estimated_due_date'] ?? null,
+        isset($p['gestational_weeks']) ? (int)$p['gestational_weeks'] : null,
+        isset($p['gestational_days']) ? (int)$p['gestational_days'] : null
+    );
+    if (empty($gestText)) {
+        $gestText = 'Not recorded';
     }
 
     $dueFormatted = !empty($p['estimated_due_date'])
         ? ('Due ' . date('d M Y', strtotime($p['estimated_due_date'])))
         : 'Due date not set';
 
-    // Check latest vitals with real timestamp
+    // Check latest vitals with real time
     $bpStmt = $pdo->prepare(
         'SELECT systolic, diastolic, pulse, recorded_at
          FROM blood_pressure_logs
@@ -103,32 +89,17 @@ foreach ($patients as $idx => $p) {
          LIMIT 1'
     );
     $bpStmt->execute([$p['id']]);
-    $bp = $bpStmt->fetch();
+    $bp = $bpStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($bp) {
         $recordedTime = strtotime($bp['recorded_at']);
-        $diff = time() - $recordedTime;
-        $bpDate = date('Y-m-d', $recordedTime);
-        $todayDate = date('Y-m-d');
-        $yesterdayDate = date('Y-m-d', strtotime('-1 day'));
-
-        if ($diff < 60) {
-            $timeAgo = 'Updated just now';
-        } elseif ($diff < 3600) {
-            $mins = max(1, (int)floor($diff / 60));
-            $timeAgo = "Updated {$mins}m ago";
-        } elseif ($bpDate === $todayDate) {
-            $timeAgo = 'Updated today at ' . date('H:i', $recordedTime);
-        } elseif ($bpDate === $yesterdayDate) {
-            $timeAgo = 'Updated yesterday at ' . date('H:i', $recordedTime);
-        } elseif ($diff < 7 * 86400) {
-            $timeAgo = 'Updated ' . date('D, H:i', $recordedTime);
-        } else {
-            $timeAgo = 'Updated ' . date('d M Y', $recordedTime);
-        }
-        $bpNote = "Latest BP {$bp['systolic']}/{$bp['diastolic']} mmHg · {$timeAgo}";
+        $realTime = date('H:i', $recordedTime);
+        $realDate = date('d M Y', $recordedTime);
+        $isToday = (date('Y-m-d', $recordedTime) === date('Y-m-d'));
+        $timeDisplay = $isToday ? $realTime : "{$realDate}, {$realTime}";
+        $bpNote = "Latest BP {$bp['systolic']}/{$bp['diastolic']} mmHg · {$timeDisplay}";
     } else {
-        $bpNote = 'No BP recorded yet';
+        $bpNote = null;
     }
 
     // Check if patient has a visit scheduled for today with this doctor

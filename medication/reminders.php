@@ -72,9 +72,9 @@ foreach ($meds as $m) {
     if ($isTaken) $takenCount++;
     $items[] = [
         'id' => (int)$m['id'],
-        'name' => $m['name'],
-        'dosageAndTime' => $m['dosage_and_time'],
-        'doctorPrescriptionNote' => $m['doctor_prescription_note'] ?: null,
+        'name' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$m['name']),
+        'dosageAndTime' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$m['dosage_and_time']),
+        'doctorPrescriptionNote' => $m['doctor_prescription_note'] ? preg_replace('/\s*\?\?\s*/u', ' · ', (string)$m['doctor_prescription_note']) : null,
         'isTaken' => $isTaken,
         'takenTimeNote' => $m['taken_time_note'] ?: null,
         'dueLaterText' => $m['due_later_text'] ?: null

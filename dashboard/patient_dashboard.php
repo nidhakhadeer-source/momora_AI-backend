@@ -88,8 +88,8 @@ $meds = $medStmt->fetchAll();
 foreach ($meds as $med) {
     $dailyCareItems[] = [
         'id' => (int)$med['id'],
-        'title' => $med['name'],
-        'subtitle' => $med['dosage_and_time'],
+        'title' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$med['name']),
+        'subtitle' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$med['dosage_and_time']),
         'isTaken' => (bool)$med['is_taken'],
         'isAppointment' => false
     ];

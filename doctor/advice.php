@@ -32,12 +32,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     );
     $stmt->execute([$doctorId, $patientId, $subject, $adviceText, $saveCopy]);
 
-    // Send notification to the patient
+    // Send notification to the patient ("New advice from Dr <name>")
+    $rawDocName = trim($user['name'] ?? 'Doctor');
+    $cleanDocName = preg_replace('/^Dr\.?\s+/i', '', $rawDocName);
+    $notifTitle = "New advice from Dr {$cleanDocName}";
+
     $notifStmt = $pdo->prepare(
         'INSERT INTO notifications (user_id, title, subtitle, detail_text, type, is_new, is_read)
-         VALUES (?, "Doctor advice received", ?, "View guidance from Dr Amelia Chen", "REPORT_REVIEW", 1, 0)'
+         VALUES (?, ?, ?, ?, "REPORT_REVIEW", 1, 0)'
     );
-    $notifStmt->execute([$patientId, "{$user['name']} replied: \"{$subject}\""]);
+    $notifStmt->execute([
+        $patientId,
+        $notifTitle,
+        $subject,
+        "View guidance from Dr {$cleanDocName}"
+    ]);
 
     respond(201, [
         'success' => true,
