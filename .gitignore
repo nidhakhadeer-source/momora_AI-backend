@@ -23,5 +23,8 @@ cache/
 # Uploads (ignore user uploaded images, retain structure and security)
 uploads/profiles/*
 !uploads/profiles/.gitkeep
+# Patient medical reports - never commit private documents
+uploads/reports/*
+!uploads/reports/.htaccess
 
 
