@@ -1804,83 +1804,6 @@
                     }
                 },
                 {
-                    "name": "Get Medical Reports",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{patient_token}}"
-                            },
-                            {
-                                "key": "ngrok-skip-browser-warning",
-                                "value": "true"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/reports/reports.php?user_id=5",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "reports",
-                                "reports.php"
-                            ],
-                            "query": [
-                                {
-                                    "key": "user_id",
-                                    "value": "5"
-                                }
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "Upload Medical Report Metadata",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{patient_token}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/x-www-form-urlencoded"
-                            },
-                            {
-                                "key": "ngrok-skip-browser-warning",
-                                "value": "true"
-                            }
-                        ],
-                        "body": {
-                            "mode": "urlencoded",
-                            "urlencoded": [
-                                {
-                                    "key": "fileName",
-                                    "value": "Ultrasound_24Weeks_Report.pdf",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "category",
-                                    "value": "ULTRASOUND",
-                                    "type": "text"
-                                }
-                            ]
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/reports/reports.php",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "reports",
-                                "reports.php"
-                            ]
-                        }
-                    }
-                },
-                {
                     "name": "Get Notifications",
                     "request": {
                         "method": "GET",
@@ -1936,6 +1859,237 @@
                                 "notifications.php"
                             ]
                         }
+                    }
+                },
+                {
+                    "name": "List Patient Reports",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{patient_token}}"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/reports.php?category=ALL",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "reports.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "category",
+                                    "value": "ALL"
+                                }
+                            ]
+                        },
+                        "description": "List authenticated patient medical reports with metadata and secure download URLs"
+                    }
+                },
+                {
+                    "name": "Upload Patient Medical Report (Multipart)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{patient_token}}"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": ""
+                                },
+                                {
+                                    "key": "title",
+                                    "value": "Mid-Trimester Anatomy Ultrasound",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "category",
+                                    "value": "ULTRASOUND",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "Routine 24-week fetal anatomy and growth ultrasound report",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/reports/reports.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "reports.php"
+                            ]
+                        },
+                        "description": "Upload medical report document (PDF, JPG, JPEG, PNG) up to 10MB"
+                    }
+                },
+                {
+                    "name": "Access or Download Report (Patient)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{patient_token}}"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/download.php?id=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "download.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Securely view or download medical report for authenticated patient owner"
+                    }
+                },
+                {
+                    "name": "Doctor Access to Assigned Patient Report",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{doctor_token}}"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/download.php?id=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "download.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Allow authorized doctor to view or download medical report of an assigned patient"
+                    }
+                },
+                {
+                    "name": "Unauthorized Report Access (Security Test)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{doctor_token}}"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/download.php?id=99999",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "download.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "id",
+                                    "value": "99999"
+                                }
+                            ]
+                        },
+                        "description": "Security test: Rejects access with 403/404 when requester is unassigned or unauthorized"
+                    }
+                },
+                {
+                    "name": "Invalid File Upload (Security Test)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{patient_token}}"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": "malicious.exe"
+                                },
+                                {
+                                    "key": "title",
+                                    "value": "Malicious Executable",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "category",
+                                    "value": "LAB_RESULTS",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/reports/reports.php",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "reports.php"
+                            ]
+                        },
+                        "description": "Security test: Rejects invalid file format or MIME type with 422"
                     }
                 }
             ]
@@ -2395,6 +2549,39 @@
                                 }
                             ]
                         }
+                    }
+                },
+                {
+                    "name": "Doctor Access to Assigned Patient Report",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{doctor_token}}"
+                            },
+                            {
+                                "key": "ngrok-skip-browser-warning",
+                                "value": "true"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/download.php?id=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "download.php"
+                            ],
+                            "query": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Allow authorized doctor to view or download medical report of an assigned patient"
                     }
                 }
             ]

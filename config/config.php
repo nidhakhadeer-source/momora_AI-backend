@@ -305,3 +305,45 @@ function computeGestationalAge(?string $lmp, ?string $edd, ?int $staticWeeks = n
     }
     return '';
 }
+
+/**
+ * Verify whether a doctor is assigned to a specific patient
+ *
+ * @param PDO $pdo
+ * @param int $doctorId
+ * @param int $patientId
+ * @return bool
+ */
+function isDoctorAssignedToPatient($pdo, int $doctorId, int $patientId): bool {
+    if ($doctorId <= 0 || $patientId <= 0) {
+        return false;
+    }
+    $stmt = $pdo->prepare(
+        'SELECT 1 FROM profiles WHERE user_id = :p1 AND assigned_doctor_id = :d1
+         UNION
+         SELECT 1 FROM appointments WHERE patient_id = :p2 AND doctor_id = :d2
+         LIMIT 1'
+    );
+    $stmt->execute([
+        ':p1' => $patientId,
+        ':d1' => $doctorId,
+        ':p2' => $patientId,
+        ':d2' => $doctorId
+    ]);
+    return (bool)$stmt->fetchColumn();
+}
+
+/**
+ * Format bytes into human readable size
+ */
+function formatBytes(?int $bytes, int $precision = 1): string {
+    if ($bytes === null || $bytes <= 0) {
+        return '0 B';
+    }
+    $units = ['B', 'KB', 'MB', 'GB'];
+    $bytes = max($bytes, 0);
+    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+    $pow = min($pow, count($units) - 1);
+    $bytes /= pow(1024, $pow);
+    return round($bytes, $precision) . ' ' . $units[$pow];
+}

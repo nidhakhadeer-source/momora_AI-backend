@@ -16,6 +16,14 @@ if ($patientId === false || $patientId <= 0) {
     ]);
 }
 
+$doctorId = (int)$user['id'];
+if (!isDoctorAssignedToPatient($pdo, $doctorId, $patientId)) {
+    respond(403, [
+        'success' => false,
+        'message' => 'Access denied: You are not assigned to this patient'
+    ]);
+}
+
 $stmt = $pdo->prepare(
     'SELECT u.id, u.name, p.patient_code, p.clinical_background, p.updated_at AS profile_updated_at,
             pd.gestational_weeks, pd.gestational_days, pd.estimated_due_date
@@ -61,38 +69,63 @@ foreach ($meds as $m) {
     ];
 }
 
-// Fetch real reports from medical_reports: id, title, report date, category, size
+// Fetch real reports from medical_reports: id, title, report date, category, size, file metadata, secure download link
 $rStmt = $pdo->prepare(
-    'SELECT id, title, date_and_size_text, category, file_type, created_at
+    'SELECT id, title, original_filename, file_path, file_type, file_size, mime_type, date_and_size_text, category, notes, created_at
      FROM medical_reports
      WHERE user_id = ?
-     ORDER BY created_at DESC'
+     ORDER BY created_at DESC, id DESC'
 );
 $rStmt->execute([$patientId]);
 $reportsRows = $rStmt->fetchAll();
 
+$scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$baseDownloadUrl = $scheme . '://' . $host . '/momora-AI/reports/download.php?id=';
+
 $reportsList = [];
 foreach ($reportsRows as $r) {
     $reportDate = !empty($r['created_at']) ? date('d M Y', strtotime($r['created_at'])) : '';
-    $size = '1.2 MB';
+    $size = !empty($r['file_size']) ? formatBytes((int)$r['file_size']) : '1.2 MB';
     if (!empty($r['date_and_size_text'])) {
         $parts = preg_split('/(\s*·\s*|\s*\?\?\s*)/u', $r['date_and_size_text']);
         if (!empty($parts[0])) {
             $reportDate = trim($parts[0]);
         }
-        if (count($parts) >= 3) {
+        if (count($parts) >= 3 && empty($r['file_size'])) {
             $size = trim($parts[2]);
-        } elseif (count($parts) == 2) {
+        } elseif (count($parts) == 2 && empty($r['file_size'])) {
             $size = trim($parts[1]);
         }
     }
+
+    $hasFile = !empty($r['file_path']) && file_exists(dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $r['file_path']));
+    $downloadUrl = $hasFile ? ($baseDownloadUrl . $r['id']) : null;
+    $origName = !empty($r['original_filename']) ? $r['original_filename'] : $r['title'];
+
     $reportsList[] = [
         'id' => (string)$r['id'],
+        'report_id' => (int)$r['id'],
         'title' => preg_replace('/\s*\?\?\s*/u', ' · ', (string)$r['title']),
         'reportDate' => $reportDate,
         'report_date' => $reportDate,
         'category' => strtoupper($r['category'] ?? 'ALL'),
-        'size' => $size
+        'size' => $size,
+        'fileType' => strtoupper($r['file_type'] ?: 'PDF'),
+        'file_type' => strtoupper($r['file_type'] ?: 'PDF'),
+        'originalFilename' => $origName,
+        'original_filename' => $origName,
+        'fileSize' => !empty($r['file_size']) ? (int)$r['file_size'] : null,
+        'file_size' => !empty($r['file_size']) ? (int)$r['file_size'] : null,
+        'mimeType' => $r['mime_type'],
+        'mime_type' => $r['mime_type'],
+        'description' => $r['notes'] ?? '',
+        'notes' => $r['notes'] ?? '',
+        'hasFile' => $hasFile,
+        'has_file' => $hasFile,
+        'downloadUrl' => $downloadUrl,
+        'download_url' => $downloadUrl,
+        'file_url' => $downloadUrl
     ];
 }
 
