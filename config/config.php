@@ -136,6 +136,9 @@ function require_auth(array $roles = []) {
     if (!empty($authHeader) && preg_match('/Bearer\s+(\S+)/i', $authHeader, $matches)) {
         $token = $matches[1];
     }
+    if (empty($token)) {
+        $token = getBearerToken();
+    }
 
     if (empty($token)) {
         respond(401, [
@@ -182,7 +185,8 @@ function require_auth(array $roles = []) {
         'id' => (int)$user['id'],
         'role' => $user['role'],
         'name' => $user['name'] ?? '',
-        'email' => $user['email'] ?? ''
+        'email' => $user['email'] ?? '',
+        'token' => $token
     ];
 }
 
