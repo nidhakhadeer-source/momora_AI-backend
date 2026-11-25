@@ -29,50 +29,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $doc = $dStmt->fetch();
     $doctorId = $doc ? (int)$doc['id'] : null;
 
-    if (!$doctorId) {
-        $pDocStmt = $pdo->prepare('SELECT assigned_doctor_id FROM profiles WHERE user_id = ?');
-        $pDocStmt->execute([$userId]);
-        $pDoc = $pDocStmt->fetch();
-        if ($pDoc && !empty($pDoc['assigned_doctor_id'])) {
-            $doctorId = (int)$pDoc['assigned_doctor_id'];
-        }
-    }
-    if (!$doctorId) {
-        $fallbackDocStmt = $pdo->query('SELECT id FROM users WHERE role = "doctor" AND is_active = 1 LIMIT 1');
-        $doctorId = (int)($fallbackDocStmt->fetchColumn() ?: 3);
-    }
-
     $stmt = $pdo->prepare(
         'INSERT INTO appointments (patient_id, doctor_id, doctor_name, appointment_date, appointment_time, is_in_person, appointment_type, location_notes, status)
          VALUES (?, ?, ?, ?, ?, ?, "Antenatal Consultation", "Willow Maternity Clinic · Room 3", "Confirmed")'
     );
     $stmt->execute([$userId, $doctorId, $doctorName, $apptDate, $timeText, $isInPerson]);
 
-    $notifDateStr = date('d M Y', strtotime($apptDate));
-
-    // Create confirmation notification for patient
+    // Create confirmation notification
     $notifStmt = $pdo->prepare(
         'INSERT INTO notifications (user_id, title, subtitle, detail_text, type, is_new, is_read)
          VALUES (?, "Your appointment is confirmed", ?, ?, "APPOINTMENT", 1, 0)'
     );
+    $notifDateStr = date('d M Y', strtotime($apptDate));
+    $subtitleText = "{$doctorName} · {$notifDateStr}, {$timeText}";
+    $detailNotes = "Willow Maternity Clinic · " . ($isInPerson ? "In person" : "Video visit");
     $notifStmt->execute([
         $userId,
-        "{$doctorName} · {$notifDateStr}, {$timeText}",
-        "Willow Maternity Clinic · " . ($isInPerson ? "In person" : "Video visit")
+        $subtitleText,
+        $detailNotes
     ]);
+    $patientNotifId = (int)$pdo->lastInsertId();
 
-    // Insert notification row for the doctor ("New appointment booked")
-    if ($doctorId) {
+    // Trigger real-time FCM notification to patient
+    require_once __DIR__ . '/../notifications/fcm_service.php';
+    sendFcmNotificationToUser(
+        $pdo,
+        $userId,
+        'Your appointment is confirmed',
+        $subtitleText,
+        $detailNotes,
+        'APPOINTMENT',
+        $patientNotifId,
+        'appointments'
+    );
+
+    // Notify doctor if assigned
+    if (!empty($doctorId)) {
+        $patientName = $user['name'] ?? 'Patient';
         $docNotifStmt = $pdo->prepare(
             'INSERT INTO notifications (user_id, title, subtitle, detail_text, type, is_new, is_read)
              VALUES (?, "New appointment booked", ?, ?, "APPOINTMENT", 1, 0)'
         );
-        $patientName = !empty($user['name']) ? $user['name'] : 'Patient';
-        $docNotifStmt->execute([
+        $docSubtitle = "{$patientName} booked an appointment for {$notifDateStr}, {$timeText}";
+        $docNotifStmt->execute([$doctorId, $docSubtitle, $detailNotes]);
+        $docNotifId = (int)$pdo->lastInsertId();
+
+        sendFcmNotificationToUser(
+            $pdo,
             $doctorId,
-            "{$patientName} · {$notifDateStr}, {$timeText}",
-            "Willow Maternity Clinic · " . ($isInPerson ? "In person" : "Video visit")
-        ]);
+            'New appointment booked',
+            $docSubtitle,
+            $detailNotes,
+            'APPOINTMENT',
+            $docNotifId,
+            'doctor_schedule'
+        );
     }
 
     respond(201, [
@@ -123,4 +134,3 @@ respond(200, [
         'defaultLocationNotes' => $defaultNotes
     ]
 ]);
-

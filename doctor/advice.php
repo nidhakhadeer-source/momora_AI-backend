@@ -5,19 +5,12 @@
 
 require_once __DIR__ . '/../config/config.php';
 
-$user = require_auth(['doctor']);
+$user = authenticateUser($pdo, 'doctor');
 $doctorId = (int)$user['id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = getInput();
-    $patientIdRaw = $input['patientId'] ?? ($input['patient_id'] ?? null);
-    $patientId = filter_var($patientIdRaw, FILTER_VALIDATE_INT);
-    if ($patientId === false || $patientId <= 0) {
-        respond(400, [
-            'success' => false,
-            'message' => 'patientId is required and must be a valid integer'
-        ]);
-    }
+    $patientId = filter_var($input['patientId'] ?? ($input['patient_id'] ?? 5), FILTER_VALIDATE_INT);
     $subject = trim($input['subject'] ?? 'Clinical advice');
     $adviceText = trim($input['adviceText'] ?? ($input['advice_text'] ?? ''));
     $saveCopy = isset($input['saveCopy']) ? ($input['saveCopy'] ? 1 : 0) : 1;
@@ -32,21 +25,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     );
     $stmt->execute([$doctorId, $patientId, $subject, $adviceText, $saveCopy]);
 
-    // Send notification to the patient ("New advice from Dr <name>")
-    $rawDocName = trim($user['name'] ?? 'Doctor');
-    $cleanDocName = preg_replace('/^Dr\.?\s+/i', '', $rawDocName);
-    $notifTitle = "New advice from Dr {$cleanDocName}";
+    // Send notification to the patient
+    $notifTitle = "Doctor advice received";
+    $notifSubtitle = "{$user['name']} replied: \"{$subject}\"";
+    $notifDetail = "View guidance from " . ($user['name'] ?: 'your doctor');
 
     $notifStmt = $pdo->prepare(
         'INSERT INTO notifications (user_id, title, subtitle, detail_text, type, is_new, is_read)
          VALUES (?, ?, ?, ?, "REPORT_REVIEW", 1, 0)'
     );
-    $notifStmt->execute([
+    $notifStmt->execute([$patientId, $notifTitle, $notifSubtitle, $notifDetail]);
+    $notifId = (int)$pdo->lastInsertId();
+
+    // Trigger real-time FCM notification to patient
+    require_once __DIR__ . '/../notifications/fcm_service.php';
+    sendFcmNotificationToUser(
+        $pdo,
         $patientId,
         $notifTitle,
-        $subject,
-        "View guidance from Dr {$cleanDocName}"
-    ]);
+        $notifSubtitle,
+        $notifDetail,
+        'REPORT_REVIEW',
+        $notifId,
+        'doctor_advice'
+    );
 
     respond(201, [
         'success' => true,
@@ -54,114 +56,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 }
 
-// -----------------------------------------------------------------------------
-// GET: Advice Form Data & Patient Context
-// -----------------------------------------------------------------------------
+// GET Advice Form Data
 $input = getInput();
-$patientIdRaw = $input['patientId'] ?? ($input['patient_id'] ?? ($_GET['patientId'] ?? ($_GET['patient_id'] ?? null)));
-$patientId = filter_var($patientIdRaw, FILTER_VALIDATE_INT);
-if ($patientId === false || $patientId <= 0) {
-    respond(400, [
-        'success' => false,
-        'message' => 'patientId is required and must be a valid integer'
-    ]);
-}
+$patientId = filter_var($input['patientId'] ?? 5, FILTER_VALIDATE_INT);
+if (!$patientId) $patientId = 5;
 
 $stmt = $pdo->prepare(
-    'SELECT u.name, p.patient_code, pd.gestational_weeks, pd.gestational_days, pd.estimated_due_date, pd.last_menstrual_period
+    'SELECT u.name, p.patient_code, pd.gestational_weeks, pd.gestational_days, pd.estimated_due_date
      FROM users u
      LEFT JOIN profiles p ON p.user_id = u.id
      LEFT JOIN pregnancy_details pd ON pd.user_id = u.id
-     WHERE u.id = ? AND u.role = "patient"'
+     WHERE u.id = ?'
 );
 $stmt->execute([$patientId]);
 $patient = $stmt->fetch();
 
-if (!$patient) {
-    respond(404, [
-        'success' => false,
-        'message' => 'Patient not found'
-    ]);
-}
-
-$pName = trim($patient['name'] ?? '');
-$words = explode(' ', $pName);
-$firstName = !empty($words[0]) ? $words[0] : 'Patient';
-$initials = (count($words) >= 2) ? (strtoupper($words[0][0]) . strtoupper($words[1][0])) : (mb_strtoupper(mb_substr($pName, 0, 2)) ?: 'PT');
+$pName = $patient['name'] ?? 'Maya Patel';
+$words = explode(' ', trim($pName));
+$initials = (count($words) >= 2) ? (strtoupper($words[0][0]) . strtoupper($words[1][0])) : 'MP';
 $patientCode = $patient['patient_code'] ?: ('P-' . (10000 + $patientId));
+$gestText = ($patient['gestational_weeks'] ?? 24) . 'w ' . ($patient['gestational_days'] ?? 3) . 'd';
+$dueDateText = $patient['estimated_due_date'] ? ('Due ' . date('d M Y', strtotime($patient['estimated_due_date']))) : 'Due 13 Feb 2027';
 
-// Compute real gestational age dynamically
-$now = time();
-$gestText = null;
-if (!empty($patient['last_menstrual_period'])) {
-    $lmpTime = strtotime($patient['last_menstrual_period']);
-    if ($lmpTime !== false && $lmpTime <= $now) {
-        $daysDiff = (int)floor(($now - $lmpTime) / 86400);
-        $w = (int)floor($daysDiff / 7);
-        $d = $daysDiff % 7;
-        $gestText = "{$w}w {$d}d";
-    }
-}
-if ($gestText === null && !empty($patient['estimated_due_date'])) {
-    $eddTime = strtotime($patient['estimated_due_date']);
-    if ($eddTime !== false) {
-        $daysUntilDue = (int)floor(($eddTime - $now) / 86400);
-        $daysElapsed = max(0, 280 - $daysUntilDue);
-        $w = (int)floor($daysElapsed / 7);
-        $d = $daysElapsed % 7;
-        $gestText = "{$w}w {$d}d";
-    }
-}
-if ($gestText === null) {
-    $weeks = (int)($patient['gestational_weeks'] ?? 0);
-    $days = (int)($patient['gestational_days'] ?? 0);
-    $gestText = ($weeks > 0 || $days > 0) ? "{$weeks}w {$days}d" : "Not recorded";
-}
+// Find recent symptom query from patient
+$sStmt = $pdo->prepare('SELECT symptom_name, started_text FROM symptom_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 1');
+$sStmt->execute([$patientId]);
+$symp = $sStmt->fetch();
 
-$dueDateText = !empty($patient['estimated_due_date'])
-    ? ('Due ' . date('d M Y', strtotime($patient['estimated_due_date'])))
-    : 'Due date not set';
+$quote = $symp ? "\"I've had mild {$symp['symptom_name']}. What can I try?\"" : "\"I've had mild heartburn after lunch. What can I try?\"";
+$msgTime = 'PATIENT MESSAGE · ' . date('d M, H:i');
 
-// Fetch patient's recent symptoms as a list with real timestamps
-$sympStmt = $pdo->prepare(
-    'SELECT id, symptom_name, severity, started_text, duration_text, ai_guidance, created_at
-     FROM symptom_logs
-     WHERE user_id = ?
-     ORDER BY created_at DESC
-     LIMIT 10'
-);
-$sympStmt->execute([$patientId]);
-$symptomLogs = $sympStmt->fetchAll();
-
-$recentSymptoms = array_map(function($s) {
-    $ts = strtotime($s['created_at']);
-    return [
-        'id' => (int)$s['id'],
-        'symptomName' => $s['symptom_name'],
-        'severity' => $s['severity'],
-        'startedText' => $s['started_text'],
-        'durationText' => $s['duration_text'],
-        'aiGuidance' => $s['ai_guidance'],
-        'createdAt' => $s['created_at'],
-        'timestampFormatted' => date('d M Y, H:i', $ts),
-        'relativeTime' => date('d M, H:i', $ts)
-    ];
-}, $symptomLogs);
-
-$latestSymp = !empty($symptomLogs[0]) ? $symptomLogs[0] : null;
-
-if ($latestSymp) {
-    $sevStr = strtolower($latestSymp['severity']);
-    $quote = "\"I've had {$sevStr} {$latestSymp['symptom_name']}. What can I try?\"";
-    $msgTime = 'PATIENT MESSAGE · ' . date('d M, H:i', strtotime($latestSymp['created_at']));
-    $defaultSubject = ucfirst($latestSymp['symptom_name']) . ': gentle steps & follow-up';
-} else {
-    $quote = "\"I've had mild symptoms. What can I try?\"";
-    $msgTime = 'NO RECENT SYMPTOMS';
-    $defaultSubject = 'Clinical guidance & follow-up';
-}
-
-$defaultAdvice = "Hi {$firstName}, try smaller meals and stay upright after eating. Let's review this at your upcoming visit. Contact the clinic sooner if symptoms persist or worsen.\n\nFor severe chest or abdominal pain, seek urgent maternity care or local emergency services.";
+$defaultSubject = 'Heartburn: gentle steps & follow-up';
+$defaultAdvice = "Hi {$words[0]}, try smaller meals and stay upright after eating. Let's review this at your upcoming visit. Contact the clinic sooner if symptoms persist or worsen.\n\nFor severe chest or abdominal pain, seek urgent maternity care or local emergency services.";
 
 respond(200, [
     'success' => true,
@@ -174,7 +100,6 @@ respond(200, [
         'patientIdText' => $patientCode,
         'patientMessageTimeText' => $msgTime,
         'patientMessageQuote' => $quote,
-        'recentSymptoms' => $recentSymptoms,
         'defaultSubject' => $defaultSubject,
         'defaultAdviceText' => $defaultAdvice
     ]

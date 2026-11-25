@@ -122,9 +122,22 @@ try {
     $fetchStmt->execute([$notifId]);
     $record = $fetchStmt->fetch();
 
+    // 8. Dispatch real-time FCM push notification
+    require_once __DIR__ . '/fcm_service.php';
+    $fcmResult = sendFcmNotificationToUser(
+        $pdo,
+        $userId,
+        $title,
+        $subtitle,
+        $detailText,
+        $type,
+        $notifId
+    );
+
     respond(201, [
         'success' => true,
         'message' => 'Notification created successfully',
+        'fcm' => $fcmResult,
         'data' => [
             'id' => (int)$record['id'],
             'user_id' => (int)$record['user_id'],
