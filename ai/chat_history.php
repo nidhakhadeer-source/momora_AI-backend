@@ -62,17 +62,31 @@ try {
     }
 
     // 3. Fetch chat history strictly isolated to this user_id
-    $limit = isset($input['limit']) ? min(max((int)$input['limit'], 1), 100) : 50;
+    $limit = isset($input['limit']) ? min(max((int)$input['limit'], 1), 200) : 100;
+    $filterConvId = isset($input['conversation_id']) ? trim($input['conversation_id']) : null;
 
-    $stmt = $pdo->prepare(
-        'SELECT id, user_id, sender, message_text, bullet_points, footer_note, created_at
-         FROM ai_chat_messages
-         WHERE user_id = ?
-         ORDER BY created_at ASC, id ASC
-         LIMIT ?'
-    );
-    $stmt->bindValue(1, $userId, PDO::PARAM_INT);
-    $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+    if ($filterConvId !== null && $filterConvId !== '') {
+        $stmt = $pdo->prepare(
+            'SELECT id, user_id, conversation_id, sender, message_text, bullet_points, footer_note, created_at
+             FROM ai_chat_messages
+             WHERE user_id = ? AND conversation_id = ?
+             ORDER BY created_at ASC, id ASC
+             LIMIT ?'
+        );
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $filterConvId, PDO::PARAM_STR);
+        $stmt->bindValue(3, $limit, PDO::PARAM_INT);
+    } else {
+        $stmt = $pdo->prepare(
+            'SELECT id, user_id, conversation_id, sender, message_text, bullet_points, footer_note, created_at
+             FROM ai_chat_messages
+             WHERE user_id = ?
+             ORDER BY created_at ASC, id ASC
+             LIMIT ?'
+        );
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+    }
     $stmt->execute();
     $rows = $stmt->fetchAll();
 
@@ -87,10 +101,12 @@ try {
         }
         $time = date('H:i', strtotime($row['created_at']));
         $senderLabel = $row['sender'] === 'USER' ? 'You' : 'Momora AI';
+        $convId = !empty($row['conversation_id']) ? $row['conversation_id'] : ('conv_legacy_' . date('Ymd', strtotime($row['created_at'])) . '_' . $userId);
 
         $messages[] = [
             'id' => (int)$row['id'],
             'user_id' => (int)$row['user_id'],
+            'conversation_id' => $convId,
             'sender' => $row['sender'],
             'text' => $row['message_text'],
             'bulletPoints' => $bullets,

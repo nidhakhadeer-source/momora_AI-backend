@@ -70,7 +70,12 @@ try {
         ]);
     }
 
-    // 4. Validate question
+    // 4. Validate question and conversation_id
+    $conversationId = trim($input['conversation_id'] ?? '');
+    if ($conversationId === '') {
+        $conversationId = 'conv_' . time() . '_' . bin2hex(random_bytes(4));
+    }
+
     $question = trim($input['question'] ?? ($input['message'] ?? ($input['query'] ?? ($input['text'] ?? ''))));
     if ($question === '') {
         respond(422, [
@@ -108,20 +113,21 @@ try {
 
     // Insert user question
     $userMsgStmt = $pdo->prepare(
-        'INSERT INTO ai_chat_messages (user_id, sender, message_text, created_at)
-         VALUES (?, "USER", ?, NOW())'
+        'INSERT INTO ai_chat_messages (user_id, conversation_id, sender, message_text, created_at)
+         VALUES (?, ?, "USER", ?, NOW())'
     );
-    $userMsgStmt->execute([$userId, $question]);
+    $userMsgStmt->execute([$userId, $conversationId, $question]);
     $questionId = (int)$pdo->lastInsertId();
 
     // Insert AI response
     $bulletJson = !empty($aiData['bullet_points']) ? json_encode($aiData['bullet_points'], JSON_UNESCAPED_UNICODE) : null;
     $aiMsgStmt = $pdo->prepare(
-        'INSERT INTO ai_chat_messages (user_id, sender, message_text, bullet_points, footer_note, created_at)
-         VALUES (?, "AI", ?, ?, ?, NOW())'
+        'INSERT INTO ai_chat_messages (user_id, conversation_id, sender, message_text, bullet_points, footer_note, created_at)
+         VALUES (?, ?, "AI", ?, ?, ?, NOW())'
     );
     $aiMsgStmt->execute([
         $userId,
+        $conversationId,
         $aiData['message_text'],
         $bulletJson,
         $aiData['footer_note'] ?? null
@@ -139,6 +145,7 @@ try {
             'question_id' => $questionId,
             'response_id' => $responseId,
             'user_id' => $userId,
+            'conversation_id' => $conversationId,
             'sender' => 'AI',
             'text' => $aiData['message_text'],
             'bulletPoints' => $aiData['bullet_points'] ?? [],

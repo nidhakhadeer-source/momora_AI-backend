@@ -136,11 +136,9 @@ function callFastApiPythonProvider($question) {
             'Content-Type: application/json; charset=utf-8',
             'Accept: application/json'
         ],
-      CURLOPT_TIMEOUT => 180,
-      CURLOPT_CONNECTTIMEOUT => 5,
-      CURLOPT_PROXY => '',
-      CURLOPT_NOPROXY => '*',
-      CURLOPT_SSL_VERIFYPEER => false
+        CURLOPT_TIMEOUT => 60,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_SSL_VERIFYPEER => false
     ]);
 
     $rawResponse = curl_exec($ch);
@@ -190,42 +188,25 @@ function callFastApiPythonProvider($question) {
 }
 
 /**
- * Helper to parse Ollama text response into message text and bullet points if formatted with lists
+ * Helper to clean Ollama text response, ensuring markdown markers are removed while
+ * preserving structured section headings, paragraphs, and bullet points.
  */
 function parseOllamaAnswerToGuidance($rawAnswer) {
     $rawAnswer = trim($rawAnswer);
-    $lines = explode("\n", $rawAnswer);
-    $textLines = [];
-    $bulletPoints = [];
-    $inBullets = false;
-
-    foreach ($lines as $line) {
-        $trimmed = trim($line);
-        if ($trimmed === '') {
-            continue;
-        }
-        if (preg_match('/^[-*•]\s+(.+)$/u', $trimmed, $m) || preg_match('/^\d+\.\s+(.+)$/u', $trimmed, $m)) {
-            $bulletPoints[] = trim($m[1]);
-            $inBullets = true;
-        } else {
-            if (!$inBullets) {
-                $textLines[] = $trimmed;
-            } else {
-                $bulletPoints[] = $trimmed;
-            }
-        }
-    }
-
-    if (!empty($bulletPoints) && !empty($textLines)) {
-        $mainText = implode("\n\n", $textLines);
-    } else {
-        $mainText = $rawAnswer;
-        $bulletPoints = [];
-    }
+    // Strip markdown formatting symbols (headings, bold, italics, code)
+    $cleanAnswer = preg_replace('/^#{1,6}\s*/m', '', $rawAnswer);
+    $cleanAnswer = preg_replace('/\*\*([^*]+)\*\*/', '$1', $cleanAnswer);
+    $cleanAnswer = preg_replace('/\*([^*]+)\*/', '$1', $cleanAnswer);
+    $cleanAnswer = preg_replace('/__([^_]+)__/', '$1', $cleanAnswer);
+    $cleanAnswer = preg_replace('/_([^_]+)_/', '$1', $cleanAnswer);
+    $cleanAnswer = preg_replace('/`([^`]+)`/', '$1', $cleanAnswer);
+    // Normalize bullet characters (- or * at start of lines to standard bullet •)
+    $cleanAnswer = preg_replace('/^[\s]*[-*]\s+/m', '• ', $cleanAnswer);
+    $cleanAnswer = trim($cleanAnswer);
 
     return [
-        'message_text' => $mainText,
-        'bullet_points' => $bulletPoints
+        'message_text' => $cleanAnswer,
+        'bullet_points' => []
     ];
 }
 
