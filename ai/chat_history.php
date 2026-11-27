@@ -9,33 +9,28 @@ require_once __DIR__ . '/../config/config.php';
 
 $input = getInput();
 
-// 1. Validate user_id
-$userIdRaw = $input['user_id'] ?? ($_GET['user_id'] ?? ($_POST['user_id'] ?? null));
-if ($userIdRaw === null || trim((string)$userIdRaw) === '') {
-    respond(400, [
-        'success' => false,
-        'message' => 'Valid user_id is required'
-    ]);
-}
-
-$userId = filter_var($userIdRaw, FILTER_VALIDATE_INT);
-if ($userId === false || $userId <= 0) {
-    respond(400, [
-        'success' => false,
-        'message' => 'Valid user_id is required'
-    ]);
-}
-
 try {
-    // 2. Confirm user exists
-    $userStmt = $pdo->prepare('SELECT id, name, role, is_active FROM users WHERE id = ?');
-    $userStmt->execute([$userId]);
-    $user = $userStmt->fetch();
-
-    if (!$user) {
-        respond(404, [
+    // 1. Authenticate user: strictly require verified Bearer token
+    $token = getBearerToken();
+    if (empty($token)) {
+        respond(401, [
             'success' => false,
-            'message' => 'User not found'
+            'message' => 'Unauthorized: Please provide a valid authentication token'
+        ]);
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT u.id, u.name, u.role, u.is_active
+         FROM user_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token = ? AND t.expires_at > NOW()'
+    );
+    $stmt->execute([$token]);
+    $user = $stmt->fetch();
+    if (!$user) {
+        respond(401, [
+            'success' => false,
+            'message' => 'Unauthorized: Invalid or expired authentication token'
         ]);
     }
 
@@ -43,6 +38,26 @@ try {
         respond(403, [
             'success' => false,
             'message' => 'Account access has been deactivated by administrator'
+        ]);
+    }
+
+    // Confirm user has patient role
+    if ($user['role'] !== 'patient') {
+        respond(403, [
+            'success' => false,
+            'message' => 'Access restricted: Only registered patients can view pregnancy AI chat history'
+        ]);
+    }
+
+    // Strictly derive patient identity from verified authentication mechanism
+    $userId = (int)$user['id'];
+
+    // Prevent cross-user parameter tampering: if user_id is passed in query/body (e.g. Android getChatMessages), ensure it matches authenticated identity
+    $requestedUserId = isset($input['user_id']) ? filter_var($input['user_id'], FILTER_VALIDATE_INT) : null;
+    if ($requestedUserId !== null && $requestedUserId !== false && (int)$requestedUserId !== $userId) {
+        respond(403, [
+            'success' => false,
+            'message' => 'Forbidden: Cannot access chat history for another user'
         ]);
     }
 

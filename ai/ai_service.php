@@ -95,21 +95,138 @@ function generatePregnancyAiResponse($question, $userContext = []) {
         ];
     }
 
-    // 2. Identify active AI provider from environment
-    $provider = strtolower(trim(getEnvVar('AI_PROVIDER', 'gemini')));
+    // 2. Identify active AI provider from environment (defaults to local FastAPI Ollama service)
+    $provider = strtolower(trim(getEnvVar('AI_PROVIDER', 'fastapi')));
 
-    // 3. Fallback educational reference engine (for offline testing / demo)
+    // 3. Local Python FastAPI Ollama service (qwen2.5:3b)
+    if ($provider === 'fastapi' || $provider === 'python' || $provider === 'ollama') {
+        return callFastApiPythonProvider($question);
+    }
+
+    // 4. Fallback educational reference engine (for offline testing / demo)
     if ($provider === 'fallback') {
         return generateFallbackResponse($question);
     }
 
-    // 4. OpenAI provider integration
+    // 5. OpenAI provider integration
     if ($provider === 'openai') {
         return callOpenAiProvider($question);
     }
 
-    // 5. Google Gemini provider integration (Default)
+    // 6. Google Gemini provider integration
     return callGeminiProvider($question);
+}
+
+/**
+ * Call Local Python FastAPI AI Provider (Ollama Qwen 2.5 3B)
+ */
+function callFastApiPythonProvider($question) {
+    $endpoint = getEnvVar('FASTAPI_AI_URL', 'http://127.0.0.1:8000/chat');
+
+    $payload = [
+        'message' => $question
+    ];
+
+    $ch = curl_init($endpoint);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json; charset=utf-8',
+            'Accept: application/json'
+        ],
+      CURLOPT_TIMEOUT => 180,
+      CURLOPT_CONNECTTIMEOUT => 5,
+      CURLOPT_PROXY => '',
+      CURLOPT_NOPROXY => '*',
+      CURLOPT_SSL_VERIFYPEER => false
+    ]);
+
+    $rawResponse = curl_exec($ch);
+    $curlErr = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($curlErr) {
+        return [
+            'success' => false,
+            'error_code' => 'PROVIDER_NETWORK_ERROR',
+            'message' => 'Unable to connect to Momora AI local assistant service. Please verify the Python service is running.'
+        ];
+    }
+
+    if ($httpCode !== 200) {
+        return [
+            'success' => false,
+            'error_code' => 'PROVIDER_HTTP_ERROR',
+            'message' => 'The AI assistant service encountered an error processing your request (HTTP ' . $httpCode . '). Please try again.'
+        ];
+    }
+
+    $json = json_decode($rawResponse, true);
+    if (!is_array($json) || empty($json['success']) || empty($json['answer'])) {
+        return [
+            'success' => false,
+            'error_code' => 'PROVIDER_INVALID_RESPONSE',
+            'message' => 'The AI assistant service returned an incomplete response. Please try rephrasing your question.'
+        ];
+    }
+
+    $rawAnswer = trim($json['answer']);
+    $parsedGuidance = parseOllamaAnswerToGuidance($rawAnswer);
+
+    return [
+        'success' => true,
+        'provider' => 'fastapi_ollama',
+        'data' => [
+            'is_pregnancy_related' => true,
+            'is_emergency' => false,
+            'message_text' => $parsedGuidance['message_text'],
+            'bullet_points' => $parsedGuidance['bullet_points'],
+            'footer_note' => 'Momora AI educational guidance · Consult your doctor for clinical advice.'
+        ]
+    ];
+}
+
+/**
+ * Helper to parse Ollama text response into message text and bullet points if formatted with lists
+ */
+function parseOllamaAnswerToGuidance($rawAnswer) {
+    $rawAnswer = trim($rawAnswer);
+    $lines = explode("\n", $rawAnswer);
+    $textLines = [];
+    $bulletPoints = [];
+    $inBullets = false;
+
+    foreach ($lines as $line) {
+        $trimmed = trim($line);
+        if ($trimmed === '') {
+            continue;
+        }
+        if (preg_match('/^[-*•]\s+(.+)$/u', $trimmed, $m) || preg_match('/^\d+\.\s+(.+)$/u', $trimmed, $m)) {
+            $bulletPoints[] = trim($m[1]);
+            $inBullets = true;
+        } else {
+            if (!$inBullets) {
+                $textLines[] = $trimmed;
+            } else {
+                $bulletPoints[] = $trimmed;
+            }
+        }
+    }
+
+    if (!empty($bulletPoints) && !empty($textLines)) {
+        $mainText = implode("\n\n", $textLines);
+    } else {
+        $mainText = $rawAnswer;
+        $bulletPoints = [];
+    }
+
+    return [
+        'message_text' => $mainText,
+        'bullet_points' => $bulletPoints
+    ];
 }
 
 /**

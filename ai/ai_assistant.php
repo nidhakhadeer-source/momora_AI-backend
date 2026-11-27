@@ -18,33 +18,28 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $input = getInput();
 
-// 2. Validate user_id
-$userIdRaw = $input['user_id'] ?? ($_POST['user_id'] ?? null);
-if ($userIdRaw === null || trim((string)$userIdRaw) === '') {
-    respond(400, [
-        'success' => false,
-        'message' => 'Valid user_id is required'
-    ]);
-}
-
-$userId = filter_var($userIdRaw, FILTER_VALIDATE_INT);
-if ($userId === false || $userId <= 0) {
-    respond(400, [
-        'success' => false,
-        'message' => 'Valid user_id is required'
-    ]);
-}
-
 try {
-    // 3. Confirm user exists in users table
-    $userStmt = $pdo->prepare('SELECT id, name, email, role, is_active FROM users WHERE id = ?');
-    $userStmt->execute([$userId]);
-    $user = $userStmt->fetch();
-
-    if (!$user) {
-        respond(404, [
+    // 2. Authenticate user: strictly require verified Bearer token
+    $token = getBearerToken();
+    if (empty($token)) {
+        respond(401, [
             'success' => false,
-            'message' => 'User not found'
+            'message' => 'Unauthorized: Please provide a valid authentication token'
+        ]);
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT u.id, u.name, u.email, u.role, u.is_active
+         FROM user_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token = ? AND t.expires_at > NOW()'
+    );
+    $stmt->execute([$token]);
+    $user = $stmt->fetch();
+    if (!$user) {
+        respond(401, [
+            'success' => false,
+            'message' => 'Unauthorized: Invalid or expired authentication token'
         ]);
     }
 
@@ -60,6 +55,18 @@ try {
         respond(403, [
             'success' => false,
             'message' => 'Access restricted: Only registered patients can access the pregnancy AI assistant'
+        ]);
+    }
+
+    // Strictly derive patient identity from verified authentication mechanism
+    $userId = (int)$user['id'];
+
+    // Prevent parameter tampering: if user_id is explicitly supplied in request, ensure it matches authenticated identity
+    $requestedUserId = isset($input['user_id']) ? filter_var($input['user_id'], FILTER_VALIDATE_INT) : null;
+    if ($requestedUserId !== null && $requestedUserId !== false && (int)$requestedUserId !== $userId) {
+        respond(403, [
+            'success' => false,
+            'message' => 'Forbidden: Cannot send messages on behalf of another user'
         ]);
     }
 
