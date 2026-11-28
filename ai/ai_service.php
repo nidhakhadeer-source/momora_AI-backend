@@ -65,14 +65,19 @@ function isNonPregnancyQuery($text) {
  * @param array $userContext Optional patient context (name, gestational week)
  * @return array Result array with success, data, or error message
  */
-function generatePregnancyAiResponse($question, $userContext = []) {
+function generatePregnancyAiResponse($question, $userContext = [], $imageBase64 = null) {
     $question = trim($question);
-    if (empty($question)) {
+    if (empty($question) && empty($imageBase64)) {
         return [
             'success' => false,
             'error_code' => 'EMPTY_QUESTION',
-            'message' => 'Please enter a question'
+            'message' => 'Please enter a question or attach an image'
         ];
+    }
+
+    // Default question for image if message is blank
+    if (empty($question) && !empty($imageBase64)) {
+        $question = "Please analyze this image and explain any health, nutritional, or pregnancy considerations.";
     }
 
     // 1. FAST-PATH: Detect critical medical emergencies immediately
@@ -98,9 +103,9 @@ function generatePregnancyAiResponse($question, $userContext = []) {
     // 2. Identify active AI provider from environment (defaults to local FastAPI Ollama service)
     $provider = strtolower(trim(getEnvVar('AI_PROVIDER', 'fastapi')));
 
-    // 3. Local Python FastAPI Ollama service (qwen2.5:3b)
+    // 3. Local Python FastAPI Ollama service (qwen2.5:3b & moondream vision)
     if ($provider === 'fastapi' || $provider === 'python' || $provider === 'ollama') {
-        return callFastApiPythonProvider($question);
+        return callFastApiPythonProvider($question, $imageBase64, $userContext);
     }
 
     // 4. Fallback educational reference engine (for offline testing / demo)
@@ -118,14 +123,20 @@ function generatePregnancyAiResponse($question, $userContext = []) {
 }
 
 /**
- * Call Local Python FastAPI AI Provider (Ollama Qwen 2.5 3B)
+ * Call Local Python FastAPI AI Provider (Ollama Qwen 2.5 3B & Vision)
  */
-function callFastApiPythonProvider($question) {
+function callFastApiPythonProvider($question, $imageBase64 = null, $userContext = []) {
     $endpoint = getEnvVar('FASTAPI_AI_URL', 'http://127.0.0.1:8000/chat');
 
     $payload = [
         'message' => $question
     ];
+    if (!empty($imageBase64)) {
+        $payload['image'] = $imageBase64;
+    }
+    if (!empty($userContext)) {
+        $payload['user_context'] = $userContext;
+    }
 
     $ch = curl_init($endpoint);
     curl_setopt_array($ch, [
