@@ -67,7 +67,7 @@ try {
 
     if ($filterConvId !== null && $filterConvId !== '') {
         $stmt = $pdo->prepare(
-            'SELECT id, user_id, conversation_id, sender, message_text, bullet_points, footer_note, created_at
+            'SELECT id, user_id, conversation_id, sender, message_text, bullet_points, footer_note, image_url, created_at
              FROM ai_chat_messages
              WHERE user_id = ? AND conversation_id = ?
              ORDER BY created_at ASC, id ASC
@@ -78,7 +78,7 @@ try {
         $stmt->bindValue(3, $limit, PDO::PARAM_INT);
     } else {
         $stmt = $pdo->prepare(
-            'SELECT id, user_id, conversation_id, sender, message_text, bullet_points, footer_note, created_at
+            'SELECT id, user_id, conversation_id, sender, message_text, bullet_points, footer_note, image_url, created_at
              FROM ai_chat_messages
              WHERE user_id = ?
              ORDER BY created_at ASC, id ASC
@@ -111,6 +111,7 @@ try {
             'text' => $row['message_text'],
             'bulletPoints' => $bullets,
             'footerNote' => $row['footer_note'],
+            'image_url' => $row['image_url'] ?? null,
             'timestampText' => "{$senderLabel} · {$time}",
             'created_at' => $row['created_at']
         ];
